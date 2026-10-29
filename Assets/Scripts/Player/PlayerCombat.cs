@@ -43,6 +43,7 @@ namespace Hearthbound
 
         bool IncomingBlocked(Vector3 from)
         {
+            if (Pc != null && Pc.Dodging) return true; // invulnerable durante la esquiva
             if (!Blocking || !Game.HasShield) return false;
             Vector3 to = Nav.Flat(from - transform.position);
             if (Vector3.Angle(transform.forward, to) > 80f) return false;
@@ -112,10 +113,11 @@ namespace Hearthbound
         {
             float dmg = heavy ? 2f : 1f;
             bool any = false;
-            for (int i = 0; i < Lockable.All.Count; i++)
+            Lockable[] snap = Lockable.All.ToArray(); // copia: un enemigo muerto sale de la lista
+            for (int i = 0; i < snap.Length; i++)
             {
-                Lockable l = Lockable.All[i];
-                if (!l.IsEnemy) continue;
+                Lockable l = snap[i];
+                if (l == null || !l.IsEnemy) continue;
                 Vector3 to = Nav.Flat(l.transform.position - transform.position);
                 float d = to.magnitude;
                 if (d > SwordRange + (heavy ? 0.4f : 0f)) continue;

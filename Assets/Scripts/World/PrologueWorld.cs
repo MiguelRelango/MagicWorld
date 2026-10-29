@@ -237,7 +237,7 @@ namespace Hearthbound
             GameObject shelter = new GameObject("GardenRefuge");
             shelter.transform.SetParent(g, false);
             shelter.transform.position = c + new Vector3(-5.2f, 0f, 3.6f);
-            Prim.Cyl(shelter.transform, new Vector3(0f, 0.04f, 0f), new Vector3(5.2f, 0.03f, 5.2f), new Color(0.55f, 0.85f, 0.70f), false, "Glow", true);
+            Prim.Make(PrimitiveType.Cylinder, shelter.transform, new Vector3(0f, 0.04f, 0f), new Vector3(5.2f, 0.03f, 5.2f), new Color(0.55f, 0.85f, 0.70f), false, "Glow", true);
             Prim.Box(shelter.transform, new Vector3(0f, 0.5f, 0f), new Vector3(1.2f, 1.0f, 1.2f), Wood, true, "Crate");
             shelter.AddComponent<Refuge>().Radius = 3f;
         }

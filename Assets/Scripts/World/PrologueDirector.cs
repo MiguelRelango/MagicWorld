@@ -59,6 +59,10 @@ namespace Hearthbound
 
         public void Cleanup()
         {
+            StopAllCoroutines();
+            Dead = false;
+            Pickup[] loose = FindObjectsByType<Pickup>(FindObjectsSortMode.None);
+            for (int i = 0; i < loose.Length; i++) Destroy(loose[i].gameObject);
             PrologueWorld.Clear();
             if (player != null) Destroy(player.gameObject);
             if (partner != null) Destroy(partner.gameObject);
@@ -107,24 +111,13 @@ namespace Hearthbound
             combat.Pc = player;
             combat.Model = model;
             combat.Hp = hp;
-            hp.Block = null;
-            combat.enabled = false;
-            combat.enabled = true;
-            // Reasigna el filtro de bloqueo (PlayerCombat lo establece en Awake, pero Hp pudo cambiar).
-            hp.Block = (Vector3 from) => { return combat.Blocking && Game.HasShield && Vector3.Angle(player.transform.forward, Nav.Flat(from - player.transform.position)) <= 80f && BlockEffect(combat, from); };
-
+            // El filtro de bloqueo (escudo, parry y esquiva) lo asigna PlayerCombat.Awake.
             hp.OnDied = OnPlayerDied;
             hp.OnDamaged = (float a, Vector3 f) => { Sfx.Play("hurt"); };
 
             RefreshModel();
             Game.Player = player;
             rig.Snap();
-        }
-
-        bool BlockEffect(PlayerCombat combat, Vector3 from)
-        {
-            Sfx.Play("shield");
-            return true;
         }
 
         void SpawnPartner()
@@ -134,7 +127,7 @@ namespace Hearthbound
             Game.Partner = partner;
             Interactable it = partner.gameObject.AddComponent<Interactable>();
             it.Prompt = "Hablar con tu pareja";
-            it.Range = 3.2f;
+            it.Range = 2.0f;
             it.OnUse = OnPartnerTalked;
         }
 
@@ -249,6 +242,7 @@ namespace Hearthbound
         {
             doorOpened = true;
             checkpoint = new Vector3(76f, 0.2f, 30f);
+            Game.Dialog("Pareja", "¡Un puente apareció sobre el foso y la puerta se abrió! Cuidado con lo que haya al otro lado.", 6f);
             UpdateObjective();
         }
 
@@ -341,7 +335,7 @@ namespace Hearthbound
             if (refillCooldown > 0f) refillCooldown -= Time.deltaTime;
             if (caveEntered && !rockBroken && Game.HasBombs && Game.Bombs <= 0 && refillCooldown <= 0f && !HasLoosePickup(PickupKind.Bombs))
             {
-                Pickup.Spawn(player.transform.position + player.transform.forward * -2f, PickupKind.Bombs, 3);
+                Pickup.Spawn(player.transform.position + Vector3.up * 0.2f, PickupKind.Bombs, 3);
                 Game.Say("Encuentras unas bombas sobrantes", 3f);
                 refillCooldown = 4f;
             }
@@ -351,9 +345,11 @@ namespace Hearthbound
             if (player.transform.position.y < -3f && pitCooldown <= 0f)
             {
                 pitCooldown = 1f;
-                player.Teleport(PrologueWorld.PitRespawn);
+                float px = player.transform.position.x;
+                bool inPit = px > 63f && px < 73f;
+                player.Teleport(inPit ? PrologueWorld.PitRespawn : checkpoint);
                 hp.Damage(1f, player.transform.position);
-                Game.Say("Caíste al foso. Usa una bomba contra el interruptor.", 3.5f);
+                Game.Say(inPit ? "Caíste al foso. Lanza una bomba al interruptor del otro lado." : "Caíste fuera del mapa.", 3.5f);
             }
 
             UpdateAmbient();

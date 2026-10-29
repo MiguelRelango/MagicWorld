@@ -41,9 +41,12 @@ namespace Hearthbound
             RaycastHit hit;
             if (Physics.Raycast(transform.position, step.normalized, out hit, step.magnitude + 0.3f, ~0, QueryTriggerInteraction.Collide))
             {
-                if (hit.collider.GetComponentInParent<PlayerController>() == null &&
-                    hit.collider.GetComponentInParent<Partner>() == null &&
-                    hit.collider.GetComponentInParent<Arrow>() != this)
+                Collider hc = hit.collider;
+                bool skip = hc.GetComponentInParent<PlayerController>() != null
+                         || hc.GetComponentInParent<Partner>() != null
+                         || (hc.isTrigger && hc.GetComponentInParent<IHittable>() == null
+                                          && hc.GetComponentInParent<EnemySlime>() == null);
+                if (!skip)
                 {
                     OnHit(hit);
                     return;

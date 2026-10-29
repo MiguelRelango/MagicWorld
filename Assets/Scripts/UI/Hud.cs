@@ -155,10 +155,8 @@ namespace Hearthbound
             Vector3 sp = Camera.main.WorldToScreenPoint(pc.LockTarget.AimPoint + Vector3.up * 0.7f);
             if (sp.z <= 0f) return;
             float x = sp.x / s, y = (Screen.height - sp.y) / s;
-            Matrix4x4 m = GUI.matrix;
-            GUIUtility.RotateAroundPivot(45f, new Vector2(x, y));
-            Fill(new Rect(x - 9, y - 9, 18, 18), new Color(1f, 0.85f, 0.25f, 0.95f));
-            GUI.matrix = m;
+            Fill(new Rect(x - 10, y - 10, 20, 20), new Color(0.25f, 0.15f, 0.05f, 0.9f));
+            Fill(new Rect(x - 7, y - 7, 14, 14), new Color(1f, 0.85f, 0.25f, 0.95f));
         }
     }
 }

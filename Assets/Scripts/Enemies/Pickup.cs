@@ -51,6 +51,12 @@ namespace Hearthbound
             return p;
         }
 
+        /// <summary>La pareja atrae el objeto hacia el jugador.</summary>
+        public void Pull(Vector3 to, float step)
+        {
+            basePos = Vector3.MoveTowards(basePos, to, step);
+        }
+
         void Update()
         {
             t += Time.deltaTime;

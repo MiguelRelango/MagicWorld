@@ -34,7 +34,7 @@ namespace Hearthbound
             pm.staticFriction = 0.6f;
             col.material = pm;
 
-            Rigidbody rb = go.GetComponent<Rigidbody>();
+            Rigidbody rb = go.AddComponent<Rigidbody>();
             rb.mass = 1f;
             rb.linearDamping = 0.15f;
             rb.angularDamping = 0.6f;
@@ -69,7 +69,6 @@ namespace Hearthbound
             for (int i = 0; i < cols.Length; i++)
             {
                 Collider col = cols[i];
-                Vector3 p = col.ClosestPoint(c);
 
                 EnemySlime e = col.GetComponentInParent<EnemySlime>();
                 if (e != null) e.Hurt(Damage, c, 9f);

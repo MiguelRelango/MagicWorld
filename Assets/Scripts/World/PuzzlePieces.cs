@@ -18,12 +18,14 @@ namespace Hearthbound
             Prim.Box(go.transform, Vector3.zero, size, stone, true, "Wall");
             // Grietas luminosas (señal visual consistente del puzle).
             Color crack = new Color(1f, 0.55f, 0.2f);
-            float z = size.z * 0.5f + 0.01f;
-            Prim.Make(PrimitiveType.Cube, go.transform, new Vector3(0f, 0.2f, z), new Vector3(0.12f, size.y * 0.7f, 0.04f), crack, false, "Crack1", true);
-            Prim.Make(PrimitiveType.Cube, go.transform, new Vector3(0.3f, 0.5f, z), new Vector3(0.5f, 0.1f, 0.04f), crack, false, "Crack2", true);
-            Prim.Make(PrimitiveType.Cube, go.transform, new Vector3(-0.3f, -0.2f, z), new Vector3(0.5f, 0.1f, 0.04f), crack, false, "Crack3", true);
-            // Cara opuesta
-            Prim.Make(PrimitiveType.Cube, go.transform, new Vector3(0f, 0.2f, -z), new Vector3(0.12f, size.y * 0.7f, 0.04f), crack, false, "Crack4", true);
+            // Se dibujan en las dos caras que se ven al acercarse (±X).
+            for (int side = -1; side <= 1; side += 2)
+            {
+                float x = side * (size.x * 0.5f + 0.01f);
+                Prim.Make(PrimitiveType.Cube, go.transform, new Vector3(x, 0.2f, 0f), new Vector3(0.04f, size.y * 0.7f, 0.12f), crack, false, "Crack1", true);
+                Prim.Make(PrimitiveType.Cube, go.transform, new Vector3(x, 0.5f, 0.3f), new Vector3(0.04f, 0.1f, 0.5f), crack, false, "Crack2", true);
+                Prim.Make(PrimitiveType.Cube, go.transform, new Vector3(x, -0.2f, -0.3f), new Vector3(0.04f, 0.1f, 0.5f), crack, false, "Crack3", true);
+            }
             return go.AddComponent<BreakableWall>();
         }
 

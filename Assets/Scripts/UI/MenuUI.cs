@@ -189,12 +189,15 @@ namespace Hearthbound
             GUI.Label(new Rect(p.x + 20, p.y + 10, 390, 40), "Creador de personajes", lbl);
 
             CharacterLook look = Game.Look;
+            int b0 = look.Body, h0 = look.Hair, s0 = look.Skin, hc0 = look.HairColor, c0 = look.Cloth;
             float y = p.y + 64f;
             look.Body = Chooser(p.x + 20, ref y, "Cuerpo", CharacterLook.BodyNames, look.Body);
             look.Hair = Chooser(p.x + 20, ref y, "Peinado", CharacterLook.HairNames, look.Hair);
             look.Skin = Swatches(p.x + 20, ref y, "Piel", CharacterLook.SkinColors, look.Skin);
             look.HairColor = Swatches(p.x + 20, ref y, "Color de cabello", CharacterLook.HairColors, look.HairColor);
             look.Cloth = Swatches(p.x + 20, ref y, "Color de ropa", CharacterLook.ClothColors, look.Cloth);
+            if (b0 != look.Body || h0 != look.Hair || s0 != look.Skin || hc0 != look.HairColor || c0 != look.Cloth)
+                MenuScene.RefreshHero();
 
             // Vista previa del sistema de armaduras por niveles
             GUI.Label(new Rect(p.x + 20, y, 390, 26), "Vista previa de armadura: nivel " + MenuScene.PreviewArmor, lbl);
@@ -226,7 +229,6 @@ namespace Hearthbound
             if (Btn(new Rect(x, y, 60, 38), "<")) nv = CharacterLook.Cycle(value, options.Length, -1);
             if (Btn(new Rect(x + 330, y, 60, 38), ">")) nv = CharacterLook.Cycle(value, options.Length, 1);
             y += 52f;
-            if (nv != value) MenuScene.RefreshHero();
             return nv;
         }
 
@@ -243,7 +245,6 @@ namespace Hearthbound
                 if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { nv = i; Sfx.Play("ui", 1.2f); }
             }
             y += 52f;
-            if (nv != value) MenuScene.RefreshHero();
             return nv;
         }
 

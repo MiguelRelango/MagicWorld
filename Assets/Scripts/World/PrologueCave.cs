@@ -59,6 +59,9 @@ namespace Hearthbound
             Fill(c, 90f, 33f, 96f, 48f, Rock);
             Fill(c, 90f, 12f, 96f, 27f, Rock);
             Fill(c, 96f, 12f, 100f, 48f, Rock);
+            // Cierres norte y sur para que no se pueda rodear la cueva
+            Fill(c, 36f, -40f, 100f, 12f, Rock);
+            Fill(c, 36f, 48f, 100f, 60f, Rock);
             // Cierre oeste (junto a la entrada)
             Fill(c, 30f, 36f, 36f, 40f, Rock);
             Fill(c, 30f, 20f, 36f, 24f, Rock);
@@ -71,7 +74,10 @@ namespace Hearthbound
             // Interruptor de presión al otro lado del foso y su puerta
             PressurePlate plate = PressurePlate.Create(c, new Vector3(74f, 0f, 30f));
             SlidingDoor door = SlidingDoor.Create(c, new Vector3(78.5f, 1.7f, 30f), new Vector3(1f, 3.4f, 4f), new Color(0.55f, 0.40f, 0.26f));
-            plate.OnPressed = () => { door.Open(); dir.OnDoorOpened(); };
+            // Al pulsar el interruptor aparece un puente sobre el foso y se abre la puerta.
+            GameObject bridge = Prim.Box(c, new Vector3(68f, -0.25f, 30f), new Vector3(4.4f, 0.5f, 6f), new Color(0.55f, 0.40f, 0.26f), true, "Bridge");
+            bridge.SetActive(false);
+            plate.OnPressed = () => { door.Open(); bridge.SetActive(true); dir.OnDoorOpened(); };
             dir.Plate = plate;
 
             // Roca final que tapa la alcoba
@@ -120,7 +126,7 @@ namespace Hearthbound
             GameObject go = new GameObject("Refuge");
             go.transform.SetParent(parent, false);
             go.transform.position = pos;
-            Prim.Cyl(go.transform, new Vector3(0f, 0.04f, 0f), new Vector3(5.2f, 0.03f, 5.2f), new Color(0.55f, 0.85f, 0.70f), false, "Glow", true);
+            Prim.Make(PrimitiveType.Cylinder, go.transform, new Vector3(0f, 0.04f, 0f), new Vector3(5.2f, 0.03f, 5.2f), new Color(0.55f, 0.85f, 0.70f), false, "Glow", true);
             Prim.Cyl(go.transform, new Vector3(0f, 1.0f, 0f), new Vector3(0.12f, 1.0f, 0.12f), Wood, false, "Pole");
             Prim.Box(go.transform, new Vector3(0.35f, 1.7f, 0f), new Vector3(0.7f, 0.5f, 0.05f), new Color(0.95f, 0.55f, 0.62f), false, "Banner");
             Refuge r = go.AddComponent<Refuge>();

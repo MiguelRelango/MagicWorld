@@ -248,8 +248,7 @@ namespace Hearthbound
             {
                 if (Vector3.Distance(ps[i].transform.position, transform.position) < 1.3f)
                 {
-                    Vector3 pp = Game.Player.transform.position + Vector3.up;
-                    ps[i].transform.position = Vector3.MoveTowards(ps[i].transform.position, pp, Time.deltaTime * 8f);
+                    ps[i].Pull(Game.Player.transform.position, Time.deltaTime * 8f);
                 }
             }
         }
