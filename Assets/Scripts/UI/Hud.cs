@@ -46,6 +46,7 @@ namespace Hearthbound
             float W = Screen.width / s, H = Screen.height / s;
 
             DrawHealth();
+            DrawMana();
             DrawItems(W);
             DrawObjective(W);
             DrawPartner();
@@ -55,6 +56,9 @@ namespace Hearthbound
             DrawToast(W, H);
             DrawHint(W, H);
             DrawLockMarker(s);
+            DrawCrosshair(W, H);
+            if (Minimap.Instance != null) Minimap.Instance.Draw(new Rect(W - 192f, 18f, 172f, 172f));
+            DrawFlash(W, H);
 
             if (Director != null && Director.Dead)
             {
@@ -79,31 +83,61 @@ namespace Hearthbound
             }
         }
 
+        void DrawMana()
+        {
+            if (!Game.HasWand) return;
+            float f = Mathf.Clamp01(Game.Mana / Mathf.Max(1f, Game.MaxMana));
+            Fill(new Rect(16, 46, 204, 14), new Color(0f, 0.05f, 0.15f, 0.7f));
+            Fill(new Rect(18, 48, 200f * f, 10), f < 0.2f ? new Color(0.45f, 0.55f, 0.9f) : new Color(0.30f, 0.60f, 1f));
+            GUI.Label(new Rect(226, 42, 120, 20), "Maná", small);
+        }
+
+        void DrawCrosshair(float W, float H)
+        {
+            PlayerCombat c = Game.Player.GetComponent<PlayerCombat>();
+            if (c == null || CameraRig.Mode != CameraMode.Shoulder || !(c.Aiming || Game.HasWand)) return;
+            float cx = W * 0.5f, cy = H * 0.5f;
+            Color col = new Color(1f, 0.95f, 0.6f, 0.95f);
+            Fill(new Rect(cx - 1, cy - 12, 2, 8), col);
+            Fill(new Rect(cx - 1, cy + 4, 2, 8), col);
+            Fill(new Rect(cx - 12, cy - 1, 8, 2), col);
+            Fill(new Rect(cx + 4, cy - 1, 8, 2), col);
+        }
+
+        void DrawFlash(float W, float H)
+        {
+            float left = Game.FlashUntil - Time.unscaledTime;
+            if (left <= 0f) return;
+            float a = Mathf.Clamp01(left / Game.FlashDuration);
+            Fill(new Rect(0, 0, W, H), new Color(1f, 0.97f, 0.85f, a * a * 0.9f));
+        }
+
         void DrawItems(float W)
         {
             string t = "";
             if (Game.HasBow) t += "Flechas " + Game.Arrows + "   ";
             if (Game.HasBombs) t += "Bombas " + Game.Bombs + "   ";
             t += "Gemas " + Game.Gems + "   Armadura " + Game.ArmorLevel;
-            Fill(new Rect(14, 50, 360, 28), new Color(0f, 0f, 0f, 0.35f));
-            GUI.Label(new Rect(20, 53, 360, 26), t, small);
+            Fill(new Rect(14, 66, 360, 28), new Color(0f, 0f, 0f, 0.35f));
+            GUI.Label(new Rect(20, 69, 360, 26), t, small);
         }
 
         void DrawObjective(float W)
         {
             if (string.IsNullOrEmpty(Game.Objective)) return;
-            Fill(new Rect(W - 380, 14, 366, 52), new Color(0f, 0f, 0f, 0.45f));
-            GUI.Label(new Rect(W - 372, 16, 350, 20), "OBJETIVO", small);
-            GUI.Label(new Rect(W - 372, 34, 352, 30), Game.Objective, small);
+            float ox = W - 592f;   // a la izquierda del minimapa
+            Fill(new Rect(ox, 14, 380, 52), new Color(0f, 0f, 0f, 0.45f));
+            GUI.Label(new Rect(ox + 8, 16, 360, 20), "OBJETIVO", small);
+            GUI.Label(new Rect(ox + 8, 34, 364, 30), Game.Objective, small);
         }
 
         void DrawPartner()
         {
             Partner p = Game.Partner;
             if (p == null) return;
-            Fill(new Rect(14, 84, 160, 14), new Color(0f, 0f, 0f, 0.4f));
-            Fill(new Rect(16, 86, 156f * Mathf.Clamp01(p.Morale), 10), p.Downed ? new Color(0.6f, 0.6f, 0.7f) : new Color(0.98f, 0.62f, 0.72f));
-            GUI.Label(new Rect(180, 80, 200, 20), p.Downed ? "Pareja: desplomada" : "Pareja: " + (p.Order == PartnerOrder.Follow ? "te sigue" : p.Order == PartnerOrder.Wait ? "espera" : "refugio"), small);
+            Fill(new Rect(14, 100, 160, 14), new Color(0f, 0f, 0f, 0.4f));
+            Fill(new Rect(16, 102, 156f * Mathf.Clamp01(p.Morale), 10), p.Downed ? new Color(0.6f, 0.6f, 0.7f) : new Color(0.98f, 0.62f, 0.72f));
+            GUI.Label(new Rect(180, 96, 200, 20), p.Downed ? "Pareja: desplomada" : "Pareja: " + (p.Order == PartnerOrder.Follow ? "te sigue" : p.Order == PartnerOrder.Wait ? "espera" : "refugio"), small);
         }
 
         void DrawBow(float W, float H)

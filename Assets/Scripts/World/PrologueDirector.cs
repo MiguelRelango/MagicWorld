@@ -21,6 +21,8 @@ namespace Hearthbound
         bool talkedPartner, gearTaken, gardenStarted, gardenDone, bowGiven, bellRung;
         bool caveEntered, wallBroken, doorOpened, ambushed, rockBroken, treasureOpened, benchUsed;
         public bool Finished { get; private set; }
+        public bool IslandMode { get; private set; }
+        float objTimer;
 
         readonly List<EnemySlime> gardenSlimes = new List<EnemySlime>();
         PlayerController player;
@@ -46,15 +48,49 @@ namespace Hearthbound
             Finished = false;
             Dead = false;
             gardenSlimes.Clear();
+            IslandMode = false;
             checkpoint = PrologueWorld.PlayerStart;
 
             PrologueWorld.Build(this);
-            SpawnPlayer();
-            SpawnPartner();
+            SpawnPlayer(PrologueWorld.PlayerStart, 90f);
+            SpawnPartner(PrologueWorld.PartnerStart, -90f);
 
             Game.State = GameState.Playing;
             UpdateObjective();
             Game.Dialog("Pareja", "Buenos días. Hay ruidos raros cerca del huerto... ¿Puedes ayudarme? (Acércate y pulsa E)", 7f);
+        }
+
+        /// <summary>Modo mundo abierto: isla procedural con equipo completo para explorar.</summary>
+        public void BeginIsland(int seed)
+        {
+            StopAllCoroutines();
+            Cleanup();
+            Game.Reset();
+            Finished = false;
+            Dead = false;
+            gardenSlimes.Clear();
+
+            Game.HasSword = Game.HasShield = Game.HasBow = Game.HasBombs = true;
+            Game.HasWand = true;
+            Game.Arrows = 20;
+            Game.Bombs = 6;
+            Game.ArmorLevel = 2;
+
+            IslandWorld.Build(seed);
+            IslandMode = true;
+            Vector3 camp = IslandTerrain.Camp;
+            checkpoint = camp + Vector3.up * 0.4f;
+            float yaw = Mathf.Atan2(-camp.x, -camp.z) * Mathf.Rad2Deg;
+            Vector3 pp = new Vector3(camp.x - 2f, IslandTerrain.Height(camp.x - 2f, camp.z - 2f) + 0.3f, camp.z - 2f);
+            Vector3 ap = new Vector3(camp.x + 2f, IslandTerrain.Height(camp.x + 2f, camp.z - 1f) + 0.3f, camp.z - 1f);
+            SpawnPlayer(pp, yaw);
+            SpawnPartner(ap, yaw);
+            rig.Yaw = yaw;
+            rig.Snap();
+
+            Game.State = GameState.Playing;
+            Game.Objective = "Explora la isla";
+            Game.Dialog("Pareja", "¡Qué isla tan grande! Rompe las rocas con grietas usando bombas y busca ruinas y cofres. Semilla: " + seed, 8f);
         }
 
         public void Cleanup()
@@ -64,6 +100,8 @@ namespace Hearthbound
             Pickup[] loose = FindObjectsByType<Pickup>(FindObjectsSortMode.None);
             for (int i = 0; i < loose.Length; i++) Destroy(loose[i].gameObject);
             PrologueWorld.Clear();
+            IslandWorld.Clear();
+            IslandMode = false;
             if (player != null) Destroy(player.gameObject);
             if (partner != null) Destroy(partner.gameObject);
             if (rig != null) { rig.Target = null; rig.LockTarget = null; }
@@ -74,11 +112,11 @@ namespace Hearthbound
             Game.Partner = null;
         }
 
-        void SpawnPlayer()
+        void SpawnPlayer(Vector3 pos, float yaw)
         {
             GameObject go = new GameObject("Player");
-            go.transform.position = PrologueWorld.PlayerStart;
-            go.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+            go.transform.position = pos;
+            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
 
             hp = go.AddComponent<Health>();
             ApplyArmorStats(true);
@@ -120,10 +158,10 @@ namespace Hearthbound
             rig.Snap();
         }
 
-        void SpawnPartner()
+        void SpawnPartner(Vector3 pos, float yaw)
         {
-            partner = Partner.Spawn(PrologueWorld.PartnerStart, null);
-            partner.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
+            partner = Partner.Spawn(pos, null);
+            partner.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             Game.Partner = partner;
             Interactable it = partner.gameObject.AddComponent<Interactable>();
             it.Prompt = "Hablar con tu pareja";
@@ -149,6 +187,11 @@ namespace Hearthbound
 
         public void OnPartnerTalked()
         {
+            if (IslandMode)
+            {
+                Game.Dialog("Pareja", "Estoy contigo. Pulsa C para darme órdenes.", 5f);
+                return;
+            }
             talkedPartner = true;
             if (!gearTaken)
                 Game.Dialog("Pareja", "Toma tu espada y tu escudo del perchero. Y ten cuidado: con el escudo, si bloqueas justo al golpe, haces un parry.", 7f);
@@ -164,10 +207,11 @@ namespace Hearthbound
             gearTaken = true;
             Game.HasSword = true;
             Game.HasShield = true;
+            Game.HasWand = true;   // varita de prueba: lanza fuego (R)
             RefreshModel();
             Sfx.Play("pickup");
-            Game.Say("Espada y escudo equipados", 3f);
-            Game.Dialog("Pareja", "Te sienta bien. Al huerto, al oeste de casa. Tab fija al enemigo, J ataca, K bloquea.", 7f);
+            Game.Say("Espada, escudo y varita de fuego equipados", 3.5f);
+            Game.Dialog("Pareja", "Te sienta bien. Al huerto, al oeste. Tab fija al enemigo, J ataca, K bloquea. Y prueba la varita con R: al este de casa hay un cofre cubierto de enredaderas.", 9f);
             UpdateObjective();
         }
 
@@ -268,9 +312,8 @@ namespace Hearthbound
         {
             treasureOpened = true;
             Game.HasLeather = true;
-            Game.HasWand = true;
             Sfx.Play("heal");
-            Game.Say("Obtienes cuero reforzado y una varita (próximamente)", 5f);
+            Game.Say("Obtienes cuero reforzado", 5f);
             Game.Dialog("Pareja", "¡Cuero reforzado! Vamos a casa: en la mesa de trabajo puedo ayudarte a hacer una armadura nueva.", 7f);
             UpdateObjective();
         }
@@ -315,6 +358,8 @@ namespace Hearthbound
                 return;
             }
 
+            if (IslandMode) { IslandTick(); return; }
+
             // Victoria del huerto
             if (gardenStarted && !gardenDone)
             {
@@ -353,6 +398,17 @@ namespace Hearthbound
             }
 
             UpdateAmbient();
+            HandleInteraction();
+        }
+
+        void IslandTick()
+        {
+            objTimer -= Time.deltaTime;
+            if (objTimer <= 0f)
+            {
+                Game.Objective = "Explora la isla · Slimes vencidos: " + Game.Kills;
+                objTimer = 0.5f;
+            }
             HandleInteraction();
         }
 
@@ -401,6 +457,7 @@ namespace Hearthbound
             Dead = true;
             Game.Say("Te desmayaste...", 2.5f);
             yield return new WaitForSeconds(2.2f);
+            if (IslandMode && IslandWorld.Instance != null) IslandWorld.Instance.EnsureAround(checkpoint, 1);
             player.Teleport(checkpoint);
             player.ClearLock();
             hp.Revive(1f);
@@ -432,6 +489,7 @@ namespace Hearthbound
 
         public string CurrentHint()
         {
+            if (IslandMode) return "B: bomba   R: varita de fuego (quema enredaderas)   V: cambiar cámara   M: tamaño del minimapa   C: pareja";
             if (!gearTaken) return "";
             if (!gardenDone) return "J: atacar   K: escudo (parry justo al golpe)   Tab: fijar   Espacio: esquivar";
             if (bowGiven && !bellRung) return "Mantén F para apuntar, suelta para disparar";

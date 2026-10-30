@@ -11,6 +11,7 @@ namespace Hearthbound
         public Transform SwordPivot;
         public Transform ShieldPivot;
         public Transform BowPivot;
+        public Transform WandPivot;
 
         Transform root;
         Transform body;
@@ -86,6 +87,15 @@ namespace Hearthbound
             Prim.Box(BowPivot, new Vector3(0f, 0f, 0f), new Vector3(0.05f, 0.80f, 0.05f), new Color(0.55f, 0.36f, 0.20f), false, "BowWood");
             Prim.Box(BowPivot, new Vector3(0f, 0f, -0.06f), new Vector3(0.01f, 0.76f, 0.01f), new Color(0.9f, 0.9f, 0.85f), false, "BowString");
             BowPivot.gameObject.SetActive(showBow);
+
+            // Varita: bastón corto con una gema ígnea en la punta (solo se ve al lanzar).
+            GameObject wp = new GameObject("WandPivot");
+            WandPivot = wp.transform;
+            WandPivot.SetParent(root, false);
+            WandPivot.localPosition = new Vector3(0.30f, 0.98f, 0.40f);
+            Prim.Box(WandPivot, new Vector3(0f, 0f, 0.22f), new Vector3(0.05f, 0.05f, 0.62f), new Color(0.45f, 0.30f, 0.18f), false, "WandStick");
+            Prim.Make(PrimitiveType.Sphere, WandPivot, new Vector3(0f, 0f, 0.58f), Vector3.one * 0.14f, new Color(1f, 0.5f, 0.1f), false, "WandGem", true);
+            WandPivot.gameObject.SetActive(false);
         }
 
         void BuildHair(int style, Color c)

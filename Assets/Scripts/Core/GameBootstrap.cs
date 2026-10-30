@@ -26,6 +26,7 @@ namespace Hearthbound
             PrologueDirector dir = root.AddComponent<PrologueDirector>();
             Hud hud = root.AddComponent<Hud>();
             hud.Director = dir;
+            root.AddComponent<Minimap>();
             MenuUI ui = root.AddComponent<MenuUI>();
             ui.Director = dir;
 

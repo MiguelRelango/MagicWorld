@@ -93,6 +93,7 @@ namespace Hearthbound
 
         void Die()
         {
+            Game.Kills++;
             Sfx.Play("hit", 0.6f);
             Lockable l = GetComponent<Lockable>();
             if (l != null) l.enabled = false;

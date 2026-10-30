@@ -19,6 +19,8 @@ namespace Hearthbound
                 RaycastHit hit;
                 if (!Physics.SphereCast(origin, radius, d, out hit, look, ~0, QueryTriggerInteraction.Ignore))
                     return d;
+                // Las pendientes transitables (terreno de la isla) no cuentan como pared.
+                if (hit.normal.y > 0.55f) return d;
                 // Personajes y objetos físicos no cuentan como pared.
                 if (hit.collider.GetComponent<CharacterController>() != null || hit.rigidbody != null)
                     return d;

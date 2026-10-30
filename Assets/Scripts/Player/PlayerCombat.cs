@@ -31,6 +31,9 @@ namespace Hearthbound
         float bowCharge;
         float bowReady;
         float bombReady;
+        float wandReady;
+        float wandShow;
+        float noManaToast;
         float swing;
         bool hitDone;
 
@@ -50,6 +53,7 @@ namespace Hearthbound
             bool parry = Time.time - blockStart <= ParryWindow;
             if (parry)
             {
+                Game.Mana = Mathf.Min(Game.MaxMana, Game.Mana + 20f);
                 Sfx.Play("parry");
                 Game.Say("¡Parry!", 0.8f);
                 StunNear(from);
@@ -80,10 +84,14 @@ namespace Hearthbound
             if (recover > 0f) recover -= dt;
             if (Time.time > comboUntil) ComboStep = 0;
 
+            if (Game.HasWand) Game.Mana = Mathf.Min(Game.MaxMana, Game.Mana + 4f * dt);
+            if (wandShow > 0f) wandShow -= dt;
+
             UpdateSwing(dt);
             UpdateShield();
             UpdateBow(dt);
             UpdateBomb();
+            UpdateWand();
             UpdateSword();
         }
 
@@ -131,6 +139,7 @@ namespace Hearthbound
             }
             if (any)
             {
+                if (Game.HasWand) Game.Mana = Mathf.Min(Game.MaxMana, Game.Mana + 10f);
                 Sfx.Play("hit", 1f + ComboStep * 0.1f);
                 RechargeShake();
             }
@@ -183,6 +192,8 @@ namespace Hearthbound
                 Vector3 d = Nav.Flat(Pc.LockTarget.transform.position - transform.position);
                 if (d.sqrMagnitude > 0.01f) return d.normalized;
             }
+            // Cámara sobre el hombro: se apunta hacia donde mira la cámara.
+            if (CameraRig.Mode == CameraMode.Shoulder && Pc.Rig != null) return Pc.Rig.Forward;
             Vector2 m = GameInput.Move();
             Vector3 want = Pc.Rig != null ? Pc.Rig.Forward * m.y + Pc.Rig.Right * m.x : Vector3.zero;
             if (want.sqrMagnitude > 0.1f) return want.normalized;
@@ -199,8 +210,55 @@ namespace Hearthbound
             {
                 dir = (Pc.LockTarget.AimPoint - origin).normalized;
             }
+            else if (CameraRig.Mode == CameraMode.Shoulder && Pc.Rig != null)
+            {
+                dir = Pc.Rig.transform.forward;   // con la cámara al hombro la flecha sigue la mira
+            }
             Arrow.Spawn(origin, dir, 18f + bowCharge * 14f, 1f + bowCharge);
             Sfx.Play("bow", 1f + bowCharge * 0.3f);
+        }
+
+        const float WandCost = 18f;
+
+        void UpdateWand()
+        {
+            if (!Game.HasWand || !GameInput.Pressed(Act.Wand)) return;
+            if (attackLeft > 0f || Blocking || Aiming || Pc.Dodging || Time.time < wandReady) return;
+            if (Game.Mana < WandCost)
+            {
+                if (Time.time >= noManaToast) { noManaToast = Time.time + 1.2f; Game.Say("Sin maná: golpea con la espada para recargar", 1.8f); Sfx.Play("ui", 0.6f, 0.5f); }
+                return;
+            }
+
+            Game.Mana -= WandCost;
+            wandReady = Time.time + 0.45f;
+            wandShow = 0.5f;
+
+            Vector3 face = AimDirection();
+            if (face.sqrMagnitude > 0.001f) transform.rotation = Quaternion.LookRotation(Nav.Flat(face).sqrMagnitude > 0.001f ? Nav.Flat(face) : transform.forward);
+
+            Vector3 origin = transform.position + Vector3.up * 1.0f + transform.forward * 0.75f;
+            Fireball.Spawn(origin, WandDirection(origin));
+            Sfx.Play("wand", 1f, 0.7f);
+        }
+
+        /// <summary>Dirección del hechizo: al objetivo fijado, a la mira de la cámara (hombro) o hacia delante.</summary>
+        Vector3 WandDirection(Vector3 origin)
+        {
+            if (Pc.LockTarget != null) return (Pc.LockTarget.AimPoint - origin).normalized;
+            if (CameraRig.Mode == CameraMode.Shoulder && Pc.Rig != null)
+            {
+                Transform cam = Pc.Rig.transform;
+                Vector3 fwd = cam.forward;
+                // El rayo empieza a la altura del jugador para no chocar con él ni con la cámara.
+                Vector3 start = cam.position + fwd * Mathf.Max(0.5f, Vector3.Dot(transform.position - cam.position, fwd));
+                Vector3 point = start + fwd * 30f;
+                RaycastHit hit;
+                if (Physics.Raycast(start, fwd, out hit, 30f, ~0, QueryTriggerInteraction.Ignore)) point = hit.point;
+                Vector3 d = (point - origin).normalized;
+                return Vector3.Dot(d, fwd) > 0.5f ? d : fwd;
+            }
+            return transform.forward;
         }
 
         void UpdateBomb()
@@ -236,6 +294,12 @@ namespace Hearthbound
                 Model.ShieldPivot.localPosition = Vector3.Lerp(Model.ShieldPivot.localPosition, target, 1f - Mathf.Exp(-18f * dt));
                 Quaternion rot = Blocking ? Quaternion.identity : Quaternion.Euler(0f, 70f, 0f);
                 Model.ShieldPivot.localRotation = Quaternion.Slerp(Model.ShieldPivot.localRotation, rot, 1f - Mathf.Exp(-18f * dt));
+            }
+            if (Model.WandPivot != null)
+            {
+                Model.WandPivot.gameObject.SetActive(Game.HasWand && wandShow > 0f);
+                float k = Mathf.Clamp01(wandShow / 0.5f);
+                Model.WandPivot.localRotation = Quaternion.Euler(-35f * k, 0f, 0f);
             }
             if (Model.BowPivot != null)
             {

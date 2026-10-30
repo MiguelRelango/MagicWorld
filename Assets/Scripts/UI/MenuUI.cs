@@ -32,6 +32,7 @@ namespace Hearthbound
             btnA = Solid(new Color(0.85f, 0.65f, 0.30f));
             CameraSpeed = PlayerPrefs.GetFloat("camSpeed", 1f);
             Sfx.Volume = PlayerPrefs.GetFloat("volume", 0.6f);
+            GameInput.RightClickCamera = PlayerPrefs.GetInt("dragRight", 0) == 1;
         }
 
         Texture2D Solid(Color c)
@@ -158,19 +159,35 @@ namespace Hearthbound
             }
         }
 
+        string seedText = "";
+        GUIStyle fieldStyle;
+
         void DrawMain(float W, float H)
         {
             GUI.Label(new Rect(0, 40, W * 0.55f, 90), "HEARTHBOUND", title);
-            GUI.Label(new Rect(0, 118, W * 0.55f, 30), "Prólogo jugable", sub);
+            GUI.Label(new Rect(0, 118, W * 0.55f, 30), "Prólogo y mundo abierto", sub);
 
-            float x = W * 0.275f - 160f, y = H * 0.40f;
-            if (Btn(new Rect(x, y, 320, 54), "Jugar")) StartGame();
-            if (Btn(new Rect(x, y + 68, 320, 54), "Creador de personajes")) { screen = Screen_.Creator; MenuScene.PreviewArmor = 1; MenuScene.RefreshHero(); }
-            if (Btn(new Rect(x, y + 136, 320, 54), "Multijugador")) screen = Screen_.Multi;
-            if (Btn(new Rect(x, y + 204, 320, 54), "Opciones")) { screen = Screen_.Options; fromPause = false; }
-            if (Btn(new Rect(x, y + 272, 320, 54), "Controles")) screen = Screen_.Controls;
+            if (fieldStyle == null)
+            {
+                fieldStyle = new GUIStyle(GUI.skin.textField) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
+            }
+
+            float x = W * 0.275f - 160f, y = H * 0.29f, step = 58f, bh = 50f;
+            if (Btn(new Rect(x, y, 320, bh), "Prólogo")) StartGame();
+            if (Btn(new Rect(x, y + step, 320, bh), "Isla (mundo abierto)")) StartIsland();
+
+            // Semilla de la isla (vacío = al azar)
+            GUI.SetNextControlName("seed");
+            seedText = GUI.TextField(new Rect(x + 332, y + step, 130, bh), seedText, 9, fieldStyle);
+            if (string.IsNullOrEmpty(seedText) && GUI.GetNameOfFocusedControl() != "seed")
+                GUI.Label(new Rect(x + 332, y + step, 130, bh), "semilla", new GUIStyle(sub) { fontSize = 16, alignment = TextAnchor.MiddleCenter });
+
+            if (Btn(new Rect(x, y + step * 2, 320, bh), "Creador de personajes")) { screen = Screen_.Creator; MenuScene.PreviewArmor = 1; MenuScene.RefreshHero(); }
+            if (Btn(new Rect(x, y + step * 3, 320, bh), "Multijugador")) screen = Screen_.Multi;
+            if (Btn(new Rect(x, y + step * 4, 320, bh), "Opciones")) { screen = Screen_.Options; fromPause = false; }
+            if (Btn(new Rect(x, y + step * 5, 320, bh), "Controles")) screen = Screen_.Controls;
 #if !UNITY_WEBGL
-            if (Btn(new Rect(x, y + 340, 320, 54), "Salir"))
+            if (Btn(new Rect(x, y + step * 6, 320, bh), "Salir"))
             {
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
@@ -267,24 +284,40 @@ namespace Hearthbound
 
         void DrawOptions(float W, float H)
         {
-            Rect p = new Rect(30, 40, 520, 340);
+            Rect p = new Rect(30, 40, 520, 440);
             Fill(new Rect(p.x - 4, p.y - 4, p.width + 8, p.height + 8), new Color(0.95f, 0.78f, 0.4f, 0.9f));
             Fill(p, new Color(0.17f, 0.13f, 0.20f, 0.92f));
             GUI.Label(new Rect(p.x + 20, p.y + 12, 480, 40), "Opciones", lbl);
-
-            GUI.Label(new Rect(p.x + 20, p.y + 70, 300, 30), "Volumen de efectos: " + Mathf.RoundToInt(Sfx.Volume * 100f) + "%", lbl);
-            float v = GUI.HorizontalSlider(new Rect(p.x + 20, p.y + 108, 480, 24), Sfx.Volume, 0f, 1f);
-            if (!Mathf.Approximately(v, Sfx.Volume)) { Sfx.Volume = v; PlayerPrefs.SetFloat("volume", v); }
-
-            GUI.Label(new Rect(p.x + 20, p.y + 150, 400, 30), "Velocidad de giro de cámara: " + CameraSpeed.ToString("0.0") + "x", lbl);
-            float c = GUI.HorizontalSlider(new Rect(p.x + 20, p.y + 188, 480, 24), CameraSpeed, 0.4f, 2f);
-            if (!Mathf.Approximately(c, CameraSpeed)) { CameraSpeed = c; PlayerPrefs.SetFloat("camSpeed", c); ApplyCameraSpeed(); }
-
+            DrawOptionsBody(p);
             if (Btn(new Rect(p.x + 20, p.yMax - 66, 480, 46), "Volver"))
             {
                 Sfx.Play("ui");
                 screen = Screen_.Main;
             }
+        }
+
+        /// <summary>Controles comunes de Opciones (menú principal y pausa).</summary>
+        void DrawOptionsBody(Rect p)
+        {
+            GUI.Label(new Rect(p.x + 20, p.y + 56, 480, 30), "Volumen de efectos: " + Mathf.RoundToInt(Sfx.Volume * 100f) + "%", lbl);
+            float v = GUI.HorizontalSlider(new Rect(p.x + 20, p.y + 90, 480, 24), Sfx.Volume, 0f, 1f);
+            if (!Mathf.Approximately(v, Sfx.Volume)) { Sfx.Volume = v; PlayerPrefs.SetFloat("volume", v); }
+
+            GUI.Label(new Rect(p.x + 20, p.y + 126, 480, 30), "Sensibilidad de cámara: " + CameraSpeed.ToString("0.0") + "x", lbl);
+            float c = GUI.HorizontalSlider(new Rect(p.x + 20, p.y + 160, 480, 24), CameraSpeed, 0.4f, 2f);
+            if (!Mathf.Approximately(c, CameraSpeed)) { CameraSpeed = c; PlayerPrefs.SetFloat("camSpeed", c); ApplyCameraSpeed(); }
+
+            GUI.Label(new Rect(p.x + 20, p.y + 196, 480, 30), "Cámara (V): " + (CameraRig.Mode == CameraMode.Aerial ? "Aérea" : "Sobre el hombro"), lbl);
+            if (Btn(new Rect(p.x + 20, p.y + 228, 480, 40), "Cambiar cámara")) CameraRig.Toggle();
+
+            GUI.Label(new Rect(p.x + 20, p.y + 280, 480, 30), "Girar cámara con el ratón: " + (GameInput.RightClickCamera ? "botón derecho" : "botón central"), lbl);
+            if (Btn(new Rect(p.x + 20, p.y + 312, 480, 40), "Cambiar botón de giro"))
+            {
+                GameInput.RightClickCamera = !GameInput.RightClickCamera;
+                PlayerPrefs.SetInt("dragRight", GameInput.RightClickCamera ? 1 : 0);
+            }
+            if (GameInput.RightClickCamera)
+                GUI.Label(new Rect(p.x + 20, p.y + 356, 480, 24), "Con el botón derecho para girar, el escudo queda en K.", panelLbl);
         }
 
         public static void ApplyCameraSpeed()
@@ -296,27 +329,27 @@ namespace Hearthbound
 
         void DrawControls(float W, float H)
         {
-            Rect p = new Rect(30, 40, 560, 470);
+            Rect p = new Rect(30, 40, 640, 500);
             Fill(new Rect(p.x - 4, p.y - 4, p.width + 8, p.height + 8), new Color(0.95f, 0.78f, 0.4f, 0.9f));
             Fill(p, new Color(0.17f, 0.13f, 0.20f, 0.92f));
             GUI.Label(new Rect(p.x + 20, p.y + 12, 500, 40), "Controles", lbl);
-            GUI.Label(new Rect(p.x + 20, p.y + 56, 520, 380),
+            GUI.Label(new Rect(p.x + 20, p.y + 56, 600, 400),
                 "TECLADO Y RATÓN\n" +
                 "WASD  mover\n" +
-                "Flechas izq./der.  girar la cámara\n" +
+                "Flechas  girar la cámara (izq./der.) e inclinarla (arriba/abajo)\n" +
+                "Ratón: mantener botón central y arrastrar = girar cámara; rueda = zoom\n" +
+                "V  cambiar cámara (aérea / sobre el hombro)\n" +
                 "J o clic izquierdo  espada (combo de 3 golpes)\n" +
                 "K o clic derecho  escudo (parry si bloqueas justo antes del golpe)\n" +
-                "Espacio  esquivar\n" +
-                "Tab  fijar / soltar enemigo\n" +
-                "F (mantener)  apuntar el arco; soltar para disparar\n" +
-                "B  lanzar bomba\n" +
-                "E  interactuar\n" +
-                "C  ordenar a tu pareja (seguir / esperar / refugio)\n" +
-                "Esc  pausa\n\n" +
+                "Espacio  esquivar        Tab  fijar / soltar enemigo\n" +
+                "F (mantener)  arco: apuntar; soltar para disparar\n" +
+                "R  varita de fuego (gasta maná; quema enredaderas)\n" +
+                "B  lanzar bomba        E  interactuar\n" +
+                "C  ordenar a tu pareja        M  tamaño del minimapa        Esc  pausa\n\n" +
                 "MANDO\n" +
-                "Stick izq. mover, stick der. cámara, X espada, LT escudo,\n" +
-                "A esquivar, RB fijar, Y arco, B bomba, LB interactuar,\n" +
-                "Cruz abajo pareja, Start pausa", panelLbl);
+                "Stick izq. mover, stick der. cámara, X espada, LT escudo, A esquivar,\n" +
+                "RB fijar, Y arco, RT varita, B bomba, LB interactuar, clic del stick der. cámara,\n" +
+                "Cruz abajo pareja, Cruz arriba minimapa, Start pausa", panelLbl);
             if (Btn(new Rect(p.x + 20, p.yMax - 66, 520, 46), "Volver")) screen = fromPause ? Screen_.Main : Screen_.Main;
         }
 
@@ -337,15 +370,10 @@ namespace Hearthbound
 
         void DrawOptionsInPause(float W, float H)
         {
-            Rect p = new Rect(W * 0.5f - 260, 190, 520, 280);
+            Rect p = new Rect(W * 0.5f - 260, 170, 520, 440);
             Fill(new Rect(p.x - 4, p.y - 4, p.width + 8, p.height + 8), new Color(0.95f, 0.78f, 0.4f, 0.9f));
             Fill(p, new Color(0.17f, 0.13f, 0.20f, 0.95f));
-            GUI.Label(new Rect(p.x + 20, p.y + 70 - 56, 300, 30), "Volumen: " + Mathf.RoundToInt(Sfx.Volume * 100f) + "%", lbl);
-            float v = GUI.HorizontalSlider(new Rect(p.x + 20, p.y + 48, 480, 24), Sfx.Volume, 0f, 1f);
-            if (!Mathf.Approximately(v, Sfx.Volume)) { Sfx.Volume = v; PlayerPrefs.SetFloat("volume", v); }
-            GUI.Label(new Rect(p.x + 20, p.y + 90, 400, 30), "Cámara: " + CameraSpeed.ToString("0.0") + "x", lbl);
-            float c = GUI.HorizontalSlider(new Rect(p.x + 20, p.y + 128, 480, 24), CameraSpeed, 0.4f, 2f);
-            if (!Mathf.Approximately(c, CameraSpeed)) { CameraSpeed = c; PlayerPrefs.SetFloat("camSpeed", c); ApplyCameraSpeed(); }
+            DrawOptionsBody(p);
             if (Btn(new Rect(p.x + 20, p.yMax - 66, 480, 46), "Volver")) screen = Screen_.Main;
         }
 
@@ -371,6 +399,25 @@ namespace Hearthbound
             screen = Screen_.Main;
             Prim.ClearCache();
             Director.BeginPrologue();
+            ApplyCameraSpeed();
+        }
+
+        void StartIsland()
+        {
+            int seed;
+            string t = seedText != null ? seedText.Trim() : "";
+            if (t.Length == 0) seed = Random.Range(1, 999999);
+            else if (!int.TryParse(t, out seed))
+            {
+                seed = 17;
+                for (int i = 0; i < t.Length; i++) seed = seed * 31 + t[i];
+            }
+            GUI.FocusControl(null);
+            MenuScene.Hide();
+            Time.timeScale = 1f;
+            screen = Screen_.Main;
+            Prim.ClearCache();
+            Director.BeginIsland(seed);
             ApplyCameraSpeed();
         }
 

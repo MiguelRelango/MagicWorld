@@ -37,6 +37,7 @@ namespace Hearthbound
             BuildGarden(dir);
             BuildBell(dir);
             BuildScenery();
+            BuildVineChest();
             BuildCave(dir);
         }
 
@@ -273,7 +274,8 @@ namespace Hearthbound
                 if (Near(x, z, 0f, 0f, 11f) || Near(x, z, 0f, 18f, 5f) || Near(x, z, 18f, 29f, 20f) ||
                     Near(x, z, GardenCenter.x, GardenCenter.z, 13f) || Near(x, z, BellPos.x, BellPos.z, 6f) ||
                     Near(x, z, 9f, 11f, 18f) || Near(x, z, -13f, 24f, 7f) || Near(x, z, 13f, 22f, 7f) ||
-                    Near(x, z, -6f, 38f, 7f) || Near(x, z, 2f, 27f, 5f) || Near(x, z, -12f, 6f, 14f)) continue;
+                    Near(x, z, -6f, 38f, 7f) || Near(x, z, 2f, 27f, 5f) || Near(x, z, -12f, 6f, 14f) ||
+                    Near(x, z, 13f, 1f, 6f)) continue;
                 Tree(s, new Vector3(x, 0f, z), 0.8f + (float)rng.NextDouble() * 0.7f);
             }
 
@@ -285,6 +287,29 @@ namespace Hearthbound
                 float z = Mathf.Lerp(-12f, 45f, (float)rng.NextDouble());
                 if (Near(x, z, 0f, 0f, 9f) || Near(x, z, GardenCenter.x, GardenCenter.z, 10f)) continue;
                 Prim.Ball(s, new Vector3(x, 0.12f, z), Vector3.one * 0.18f, fc[rng.Next(fc.Length)], false, "Flower");
+            }
+        }
+
+        /// <summary>Cofre rodeado de enredaderas: banco de pruebas de la varita de fuego.</summary>
+        static void BuildVineChest()
+        {
+            Transform v = new GameObject("VineChest").transform;
+            v.SetParent(Root, false);
+            Vector3 c = new Vector3(13f, 0f, 1f);
+            Prim.Cyl(v, c + new Vector3(0f, 0.02f, 0f), new Vector3(5.2f, 0.03f, 5.2f), new Color(0.40f, 0.34f, 0.26f), false, "Clearing");
+            Chest chest = Chest.Create(v, c, 90f);
+            chest.OnOpened = () =>
+            {
+                Game.Gems += 8;
+                Game.Mana = Game.MaxMana;
+                Sfx.Play("pickup");
+                Game.Say("Cofre: +8 gemas. ¡El fuego despejó el camino!", 4f);
+            };
+            int n = 7;
+            for (int i = 0; i < n; i++)
+            {
+                float a = i * Mathf.PI * 2f / n;
+                Vine.Create(v, c + new Vector3(Mathf.Cos(a) * 1.9f, 0f, Mathf.Sin(a) * 1.9f), -a * Mathf.Rad2Deg + 90f, 1f);
             }
         }
 

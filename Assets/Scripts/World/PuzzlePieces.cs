@@ -8,6 +8,9 @@ namespace Hearthbound
     public class BreakableWall : MonoBehaviour
     {
         public Action OnBroken;
+        public string BreakMessage = "¡El muro se derrumbó!";
+        /// <summary>Tamaño del destello de luz al romperse (1 = muro agrietado, 0.35 = roca pequeña).</summary>
+        public float BurstSize = 0.5f;
         bool broken;
 
         public static BreakableWall Create(Transform parent, Vector3 pos, Vector3 size, Color stone)
@@ -34,7 +37,9 @@ namespace Hearthbound
             if (broken) return;
             broken = true;
             Sfx.Play("door", 0.8f);
-            Game.Say("¡El muro se derrumbó!", 2.5f);
+            Game.Say(BreakMessage, 2.5f);
+            // Destello de luz: el muro "se abre" con un resplandor.
+            LightBurst.Spawn(transform.position + Vector3.up * 0.3f, BurstSize, BurstSize >= 0.6f);
             // Escombros que salen volando.
             for (int i = 0; i < 12; i++)
             {

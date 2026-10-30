@@ -18,8 +18,10 @@ namespace Hearthbound
         public static string DialogText = "";
         public static float DialogUntil;
         public static int Bombs, Arrows, ArmorLevel = 1;
-        public static int Wood, Gems;
+        public static int Wood, Gems, Kills;
         public static int PauseFrame = -1;
+        public static float Mana = 100f, MaxMana = 100f;
+        public static float FlashUntil, FlashDuration = 1f;
         public static string Objective = "";
         public static string Toast = "";
         public static float ToastUntil;
@@ -36,6 +38,9 @@ namespace Hearthbound
             ArmorLevel = 1;
             Wood = 0;
             Gems = 0;
+            Kills = 0;
+            Mana = MaxMana;
+            FlashUntil = 0f;
             Objective = "";
             Toast = "";
             ToastUntil = 0f;
@@ -48,6 +53,13 @@ namespace Hearthbound
             DialogSpeaker = speaker;
             DialogText = text;
             DialogUntil = Time.unscaledTime + seconds;
+        }
+
+        /// <summary>Destello blanco en toda la pantalla (p. ej. al abrirse una pared).</summary>
+        public static void Flash(float seconds)
+        {
+            FlashDuration = Mathf.Max(0.05f, seconds);
+            FlashUntil = Time.unscaledTime + seconds;
         }
 
         public static void Say(string msg, float seconds = 3.5f)

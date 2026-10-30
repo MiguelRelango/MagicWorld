@@ -1,8 +1,9 @@
 # Hearthbound — prólogo jugable (Unity 6)
 
 Action-RPG 3D de aventuras con puzles al estilo *Alundra* y atmósfera cálida y estilizada.
-Este repositorio contiene el **prólogo** descrito en el GDD: casa, aldea, primer combate, arco,
-bombas y la cueva con el puzle de muros agrietados.
+Este repositorio contiene el **prólogo** descrito en el GDD (casa, aldea, primer combate, arco,
+bombas y la cueva con el puzle de muros agrietados) y un **mundo abierto en una isla procedural**
+que se genera por trozos mientras avanzas, como Minecraft.
 
 Todo el mundo, los personajes y los efectos se generan **por código con primitivas**:
 no hay prefabs, modelos ni audio que importar.
@@ -25,7 +26,11 @@ Funciona con el *Input System* nuevo y con el Input Manager clásico.
 | Acción | Teclado y ratón | Mando |
 | --- | --- | --- |
 | Mover | WASD | Stick izquierdo |
-| Cámara | Flechas izquierda / derecha | Stick derecho |
+| Cámara (girar) | Flechas, o mantener botón central del ratón y arrastrar (derecho si se activa en Opciones) | Stick derecho |
+| Zoom de cámara | Rueda del ratón | — |
+| Cambiar cámara (aérea / sobre el hombro) | V | Clic stick derecho |
+| Varita de fuego (gasta maná) | R | RT |
+| Tamaño del minimapa | M | Cruz arriba |
 | Espada (combo de 3) | J o clic izquierdo | X |
 | Escudo / parry | K o clic derecho | LT |
 | Esquivar | Espacio | A |
@@ -46,6 +51,20 @@ Funciona con el *Input System* nuevo y con el Input Manager clásico.
    derrota la emboscada y vuela la **roca** final. Abre el cofre.
 6. Vuelve a casa y usa la **mesa de trabajo**: armadura de **nivel 2** (más vida, aspecto nuevo).
 
+## Isla (mundo abierto)
+
+Botón **Isla (mundo abierto)** del menú principal. El campo de al lado es la semilla: con la misma
+semilla sale siempre la misma isla; vacío = al azar. Empiezas con todo el equipo en un campamento
+con tu pareja y exploras:
+
+- El terreno se genera en chunks de 32 m alrededor del jugador (radio de 3 chunks) y los lejanos se descartan.
+- Bosques, flores, rocas, slimes salvajes (lejos del campamento), cofres y ruinas con guardianes.
+- Las **rocas con grietas naranjas** se rompen con bombas y sueltan bombas y gemas.
+- El mar profundo no se cruza a pie: si te metes demasiado, vuelves a tierra.
+- Lo ya abierto o roto no reaparece en esa partida; los slimes sí se regeneran al recargar la zona.
+
+Código: `Assets/Scripts/World/Island/` (terreno, chunks y contenido).
+
 ## Estructura
 
 ```
@@ -56,6 +75,7 @@ Assets/
     Player/          Cámara, modelo 3D, movimiento, combate, flecha, bomba
     Enemies/         Slime, pareja, objetos recogibles
     World/           Mundo, cueva, puzles, director de misiones
+      Island/        Isla procedural: terreno, chunks y contenido
     UI/              HUD, menú 3D, creador de personajes
 ```
 
@@ -65,5 +85,10 @@ Incluido: creador de personajes (cuerpo, peinado, colores), armaduras por nivele
 previa, cámara elevada con fijado tipo Zelda, combo, escudo con parry, arco, bombas físicas,
 pareja con IA y reglas anti-frustración, menú 3D, pausa y opciones.
 
-Pendiente (fuera del prólogo): multijugador cooperativo, varitas y libros de magia, hielo y fuego,
+Novedades: minimapa cuadrado (arriba a la derecha, gira con la cámara), dos cámaras intercambiables en cualquier momento
+(aérea y sobre el hombro, con mira), cámara orbitable con el ratón, destello de luz al romper muros agrietados y
+**varita de fuego**: la bola de fuego (R, 18 de maná) daña slimes y prende las **enredaderas** que sellan un cofre al este
+de la casa (prólogo) y en cofres de la isla; el fuego se contagia entre matas. El maná se recupera solo y con golpes de espada y parries.
+
+Pendiente: archipiélago y barco, ciclo día/noche, multijugador cooperativo, libros de magia, hielo,
 niveles de armadura 3 y 4 en juego, guardado de partida.

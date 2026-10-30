@@ -41,6 +41,7 @@ namespace Hearthbound
             Fill(c, 50f, 32f, 51f, 48f, RockDark);
             Fill(c, 50f, 12f, 51f, 28f, RockDark);
             BreakableWall w1 = BreakableWall.Create(c, new Vector3(50.5f, 1.7f, 30f), new Vector3(1f, 3.4f, 4f), new Color(0.52f, 0.48f, 0.46f));
+            w1.BurstSize = 1.5f;
             w1.OnBroken = dir.OnWallBroken;
             dir.CrackedWall = w1;
             // Pasillo x 51..58, z 28..32
@@ -82,6 +83,7 @@ namespace Hearthbound
 
             // Roca final que tapa la alcoba
             BreakableWall rock = BreakableWall.Create(c, new Vector3(90.6f, 1.7f, 30f), new Vector3(1.4f, 3.4f, 6f), new Color(0.55f, 0.52f, 0.50f));
+            rock.BurstSize = 1.1f;
             rock.OnBroken = dir.OnRockBroken;
             dir.FinalRock = rock;
 

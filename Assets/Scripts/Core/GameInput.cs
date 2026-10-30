@@ -9,7 +9,8 @@ namespace Hearthbound
 {
     public enum Act
     {
-        Attack, Block, Dodge, Lock, Bow, Bomb, Interact, Pause, Partner, Confirm
+        Attack, Block, Dodge, Lock, Bow, Bomb, Interact, Pause, Partner, Confirm,
+        CameraMode, Map, Wand
     }
 
     /// <summary>
@@ -18,6 +19,9 @@ namespace Hearthbound
     /// </summary>
     public static class GameInput
     {
+        /// <summary>Si es true, el giro de cámara con el ratón usa el botón derecho (y el escudo queda solo en K / LT).</summary>
+        public static bool RightClickCamera;
+
 #if ENABLE_INPUT_SYSTEM
         static readonly List<ButtonControl> buf = new List<ButtonControl>(4);
 
@@ -36,7 +40,7 @@ namespace Hearthbound
                     break;
                 case Act.Block:
                     if (k != null) buf.Add(k.kKey);
-                    if (m != null) buf.Add(m.rightButton);
+                    if (m != null && !RightClickCamera) buf.Add(m.rightButton);
                     if (g != null) buf.Add(g.leftTrigger);
                     break;
                 case Act.Dodge:
@@ -70,6 +74,18 @@ namespace Hearthbound
                 case Act.Confirm:
                     if (k != null) { buf.Add(k.enterKey); buf.Add(k.eKey); }
                     if (g != null) buf.Add(g.buttonSouth);
+                    break;
+                case Act.CameraMode:
+                    if (k != null) buf.Add(k.vKey);
+                    if (g != null) buf.Add(g.rightStickButton);
+                    break;
+                case Act.Map:
+                    if (k != null) buf.Add(k.mKey);
+                    if (g != null) buf.Add(g.dpad.up);
+                    break;
+                case Act.Wand:
+                    if (k != null) buf.Add(k.rKey);
+                    if (g != null) buf.Add(g.rightTrigger);
                     break;
             }
             return buf;
@@ -135,9 +151,48 @@ namespace Hearthbound
             return Mathf.Clamp(v, -1f, 1f);
         }
 
+        /// <summary>Inclinación de cámara con flechas arriba/abajo o stick derecho vertical.</summary>
+        public static float CameraPitchAxis()
+        {
+            float v = 0f;
+            Keyboard k = Keyboard.current;
+            if (k != null)
+            {
+                if (k.upArrowKey.isPressed) v += 1f;
+                if (k.downArrowKey.isPressed) v -= 1f;
+            }
+            Gamepad g = Gamepad.current;
+            if (g != null)
+            {
+                float s = g.rightStick.ReadValue().y;
+                if (Mathf.Abs(s) > 0.2f) v += s;
+            }
+            return Mathf.Clamp(v, -1f, 1f);
+        }
+
+        /// <summary>true mientras se mantiene pulsado el botón de giro de cámara del ratón.</summary>
+        public static bool DragHeld()
+        {
+            Mouse m = Mouse.current;
+            if (m == null) return false;
+            return RightClickCamera ? m.rightButton.isPressed : m.middleButton.isPressed;
+        }
+
+        /// <summary>Movimiento del ratón en píxeles desde el fotograma anterior.</summary>
         public static Vector2 PointerDelta()
         {
-            return Vector2.zero;
+            Mouse m = Mouse.current;
+            return m != null ? m.delta.ReadValue() : Vector2.zero;
+        }
+
+        /// <summary>Rueda del ratón: positivo = hacia delante.</summary>
+        public static float Scroll()
+        {
+            Mouse m = Mouse.current;
+            if (m == null) return 0f;
+            float y = m.scroll.ReadValue().y;
+            if (Mathf.Abs(y) > 5f) y /= 120f;
+            return y;
         }
 #else
         static KeyCode[] Keys(Act a)
@@ -145,7 +200,7 @@ namespace Hearthbound
             switch (a)
             {
                 case Act.Attack: return new[] { KeyCode.J, KeyCode.Mouse0 };
-                case Act.Block: return new[] { KeyCode.K, KeyCode.Mouse1 };
+                case Act.Block: return RightClickCamera ? new[] { KeyCode.K } : new[] { KeyCode.K, KeyCode.Mouse1 };
                 case Act.Dodge: return new[] { KeyCode.Space };
                 case Act.Lock: return new[] { KeyCode.Tab };
                 case Act.Bow: return new[] { KeyCode.F };
@@ -154,6 +209,9 @@ namespace Hearthbound
                 case Act.Pause: return new[] { KeyCode.Escape };
                 case Act.Partner: return new[] { KeyCode.C };
                 case Act.Confirm: return new[] { KeyCode.Return, KeyCode.E };
+                case Act.CameraMode: return new[] { KeyCode.V };
+                case Act.Map: return new[] { KeyCode.M };
+                case Act.Wand: return new[] { KeyCode.R };
             }
             return new KeyCode[0];
         }
@@ -197,9 +255,27 @@ namespace Hearthbound
             return v;
         }
 
+        public static float CameraPitchAxis()
+        {
+            float v = 0f;
+            if (Input.GetKey(KeyCode.UpArrow)) v += 1f;
+            if (Input.GetKey(KeyCode.DownArrow)) v -= 1f;
+            return v;
+        }
+
+        public static bool DragHeld()
+        {
+            return Input.GetMouseButton(RightClickCamera ? 1 : 2);
+        }
+
         public static Vector2 PointerDelta()
         {
-            return Vector2.zero;
+            return new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")) * 10f;
+        }
+
+        public static float Scroll()
+        {
+            return Input.mouseScrollDelta.y;
         }
 #endif
     }
