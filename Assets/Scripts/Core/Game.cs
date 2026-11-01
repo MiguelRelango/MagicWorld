@@ -16,7 +16,9 @@ namespace Hearthbound
         public static CharacterLook Look = new CharacterLook();
 
         public static bool HasSword, HasShield, HasBow, HasBombs;
-        public static bool HasLeather, HasWand;
+        public static bool HasLeather, HasWand, HasAxe;
+        public static bool Building;      // modo construcción activo
+        public static int Seeds;           // semillas de árbol
         public static string DialogSpeaker = "";
         public static string DialogText = "";
         public static float DialogUntil;
@@ -36,7 +38,9 @@ namespace Hearthbound
         public static void Reset()
         {
             HasSword = HasShield = HasBow = HasBombs = false;
-            HasLeather = HasWand = false;
+            HasLeather = HasWand = HasAxe = false;
+            Building = false;
+            Seeds = 0;
             DialogSpeaker = "";
             DialogText = "";
             DialogUntil = 0f;

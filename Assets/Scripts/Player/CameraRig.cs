@@ -107,7 +107,7 @@ namespace Hearthbound
             else shoulderPitch = Mathf.Clamp(shoulderPitch + dp, -12f, 50f);
 
             float scroll = GameInput.Scroll();
-            if (Mathf.Abs(scroll) > 0.01f && Game.State == GameState.Playing)
+            if (Mathf.Abs(scroll) > 0.01f && Game.State == GameState.Playing && !Game.Building)
             {
                 if (Mode == CameraMode.Aerial) aerialDist = Mathf.Clamp(aerialDist - scroll * 0.8f, 5f, 15f);
                 else shoulderDist = Mathf.Clamp(shoulderDist - scroll * 0.4f, 2.4f, 7f);

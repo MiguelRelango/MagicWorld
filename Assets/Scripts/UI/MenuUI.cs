@@ -436,7 +436,7 @@ namespace Hearthbound
             GUI.Label(new Rect(4, by + 50, w - 8, 130),
                 "Fijas: Esc = pausa, Enter / E = confirmar.\n" +
                 "Mando: stick izq. mover, stick der. cámara, A saltar, X espada, LT escudo, RT varita, Y arco, B bomba, " +
-                "LB interactuar, RB fijar, clic stick izq. esquivar, clic stick der. cambiar cámara, " +
+                "LB interactuar, RB fijar, cruz derecha hacha, clic stick izq. esquivar, clic stick der. cambiar cámara, " +
                 "cruz abajo pareja, arriba mapa grande, izquierda minimapa, Select inventario, Start pausa.", panelLbl);
             GUI.EndScrollView();
         }

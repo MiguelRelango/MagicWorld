@@ -55,6 +55,8 @@ namespace Hearthbound
             DrawDialog(W, H);
             DrawToast(W, H);
             DrawHint(W, H);
+            DrawTreeInfo(W, H);
+            DrawBuild(W, H);
             DrawDevBadge(H);
             DrawLockMarker(s);
             DrawCrosshair(W, H);
@@ -105,6 +107,49 @@ namespace Hearthbound
             Fill(new Rect(cx + 4, cy - 1, 8, 2), col);
         }
 
+        /// <summary>Aviso del brote de árbol más cercano con el tiempo que le falta.</summary>
+        void DrawTreeInfo(float W, float H)
+        {
+            if (Game.Building || Game.Player == null) return;
+            TreeNode n = TreeNode.NearestGrowing(Game.Player.transform.position, 3.5f);
+            if (n == null) return;
+            string t = (n.Planted ? "Brote plantado" : "Brote de árbol") + " · crece en " + TreeNode.FormatTime(n.SecondsLeft);
+            Fill(new Rect(W * 0.5f - 170f, H * 0.66f, 340f, 28f), new Color(0f, 0f, 0f, 0.5f));
+            GUI.Label(new Rect(W * 0.5f - 164f, H * 0.66f + 2f, 330f, 26f), t, new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+        }
+
+        /// <summary>Barra de piezas del modo construcción.</summary>
+        void DrawBuild(float W, float H)
+        {
+            Builder b = Builder.Instance;
+            if (!Game.Building || b == null) return;
+            float sw = 116f, gap = 8f;
+            float total = 5f * sw + 4f * gap;
+            float x0 = (W - total) * 0.5f, y = H - 98f;
+
+            string info = "CONSTRUIR  Nivel " + b.Level + " (rueda)  Madera " + Game.Wood + "  Clic izq.: colocar  Clic der. o Supr: quitar  X: salir";
+            Fill(new Rect(x0 - 6f, y - 62f, total + 12f, 26f), new Color(0f, 0f, 0f, 0.55f));
+            GUI.Label(new Rect(x0, y - 62f, total, 26f), info, new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            if (!string.IsNullOrEmpty(b.Hint))
+            {
+                Fill(new Rect(x0 - 6f, y - 34f, total + 12f, 26f), new Color(0.45f, 0.08f, 0.08f, 0.7f));
+                GUI.Label(new Rect(x0, y - 34f, total, 26f), b.Hint, new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            }
+
+            for (int i = 0; i < 5; i++)
+            {
+                Rect r = new Rect(x0 + i * (sw + gap), y, sw, 62f);
+                Fill(new Rect(r.x - 3f, r.y - 3f, r.width + 6f, r.height + 6f), i == b.Sel ? new Color(1f, 0.9f, 0.45f) : new Color(0.3f, 0.26f, 0.32f));
+                Fill(r, new Color(0.15f, 0.12f, 0.18f, 0.95f));
+                GUIStyle c = new GUIStyle(small) { alignment = TextAnchor.UpperCenter, fontStyle = FontStyle.Bold };
+                GUI.Label(new Rect(r.x, r.y + 4f, r.width, 24f), (i + 1) + "  " + Builder.Names[i], c);
+                bool ok = Game.Wood >= Builder.Cost[i];
+                GUIStyle c2 = new GUIStyle(small) { alignment = TextAnchor.UpperCenter };
+                c2.normal.textColor = ok ? new Color(0.85f, 0.95f, 0.8f) : new Color(1f, 0.55f, 0.5f);
+                GUI.Label(new Rect(r.x, r.y + 30f, r.width, 24f), Builder.Cost[i] + " madera", c2);
+            }
+        }
+
         void DrawDevBadge(float H)
         {
             if (!Settings.Dev) return;
@@ -112,8 +157,8 @@ namespace Hearthbound
             if (Game.GodMode) t += "  invulnerable";
             if (Game.InfMana) t += "  maná inf.";
             if (Game.InfAmmo) t += "  munición inf.";
-            Fill(new Rect(14, H - 34f, 320, 22), new Color(0.35f, 0.05f, 0.45f, 0.75f));
-            GUI.Label(new Rect(20, H - 36f, 320, 24), t, small);
+            Fill(new Rect(14, H - 62f, 320, 22), new Color(0.35f, 0.05f, 0.45f, 0.75f));
+            GUI.Label(new Rect(20, H - 64f, 320, 24), t, small);
         }
 
         void DrawFlash(float W, float H)
@@ -130,8 +175,10 @@ namespace Hearthbound
             if (Game.HasBow) t += "Flechas " + Game.Arrows + "   ";
             if (Game.HasBombs) t += "Bombas " + Game.Bombs + "   ";
             t += "Gemas " + Game.Gems + "   Armadura " + Game.ArmorLevel;
-            Fill(new Rect(14, 66, 360, 28), new Color(0f, 0f, 0f, 0.35f));
-            GUI.Label(new Rect(20, 69, 360, 26), t, small);
+            if (Game.HasAxe || Game.Wood > 0) t += "   Madera " + Game.Wood;
+            if (Game.Seeds > 0) t += "   Semillas " + Game.Seeds;
+            Fill(new Rect(14, 66, 560, 28), new Color(0f, 0f, 0f, 0.35f));
+            GUI.Label(new Rect(20, 69, 560, 26), t, small);
         }
 
         void DrawObjective(float W)

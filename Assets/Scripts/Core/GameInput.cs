@@ -10,7 +10,7 @@ namespace Hearthbound
 {
     public enum Act
     {
-        Attack, Block, Dodge, Jump, Lock, Bow, Bomb, Wand, Interact, Partner,
+        Attack, Block, Dodge, Jump, Lock, Bow, Bomb, Wand, Axe, Plant, Build, Interact, Partner,
         CameraMode, Map, MapSize, Inventory, Dev,
         MoveForward, MoveBack, MoveLeft, MoveRight, CamLeft, CamRight, CamUp, CamDown,
         Pause, Confirm
@@ -33,7 +33,7 @@ namespace Hearthbound
         {
             Act.MoveForward, Act.MoveBack, Act.MoveLeft, Act.MoveRight,
             Act.CamLeft, Act.CamRight, Act.CamUp, Act.CamDown,
-            Act.Attack, Act.Block, Act.Dodge, Act.Jump, Act.Lock, Act.Bow, Act.Bomb, Act.Wand,
+            Act.Attack, Act.Block, Act.Dodge, Act.Jump, Act.Lock, Act.Bow, Act.Bomb, Act.Wand, Act.Axe, Act.Plant, Act.Build,
             Act.Interact, Act.Partner, Act.CameraMode, Act.Map, Act.MapSize, Act.Inventory, Act.Dev
         };
 
@@ -50,6 +50,9 @@ namespace Hearthbound
             d[Act.Bow] = new[] { KeyCode.F, KeyCode.None };
             d[Act.Bomb] = new[] { KeyCode.B, KeyCode.None };
             d[Act.Wand] = new[] { KeyCode.R, KeyCode.None };
+            d[Act.Axe] = new[] { KeyCode.T, KeyCode.None };
+            d[Act.Plant] = new[] { KeyCode.G, KeyCode.None };
+            d[Act.Build] = new[] { KeyCode.X, KeyCode.None };
             d[Act.Interact] = new[] { KeyCode.E, KeyCode.None };
             d[Act.Partner] = new[] { KeyCode.C, KeyCode.None };
             d[Act.CameraMode] = new[] { KeyCode.V, KeyCode.None };
@@ -143,6 +146,9 @@ namespace Hearthbound
                 case Act.Bow: return "Arco";
                 case Act.Bomb: return "Bomba";
                 case Act.Wand: return "Varita de fuego";
+                case Act.Axe: return "Hacha (talar)";
+                case Act.Plant: return "Plantar semilla";
+                case Act.Build: return "Modo construcción";
                 case Act.Interact: return "Interactuar";
                 case Act.Partner: return "Ordenar a la pareja";
                 case Act.CameraMode: return "Cambiar cámara";
@@ -279,6 +285,7 @@ namespace Hearthbound
                     case Act.MapSize: buf.Add(g.dpad.left); break;
                     case Act.Inventory: buf.Add(g.selectButton); break;
                     case Act.Wand: buf.Add(g.rightTrigger); break;
+                    case Act.Axe: buf.Add(g.dpad.right); break;
                 }
             }
             return buf;
@@ -303,6 +310,20 @@ namespace Hearthbound
             List<ButtonControl> l = Controls(a);
             for (int i = 0; i < l.Count; i++) if (l[i].wasReleasedThisFrame) return true;
             return false;
+        }
+
+        /// <summary>Pulsación de una tecla concreta (no reasignable), p. ej. los números de la barra de construcción.</summary>
+        public static bool RawPressed(KeyCode kc)
+        {
+            ButtonControl c = Ctl(kc);
+            return c != null && c.wasPressedThisFrame;
+        }
+
+        /// <summary>Posición del puntero en píxeles (origen abajo a la izquierda).</summary>
+        public static Vector2 PointerPos()
+        {
+            Mouse m = Mouse.current;
+            return m != null ? m.position.ReadValue() : new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
         }
 
         public static Vector2 Move()
@@ -398,6 +419,16 @@ namespace Hearthbound
             if (!binds.TryGetValue(a, out ks)) return false;
             for (int i = 0; i < ks.Length; i++) if (!Skip(a, ks[i]) && Input.GetKeyUp(ks[i])) return true;
             return false;
+        }
+
+        public static bool RawPressed(KeyCode kc)
+        {
+            return Input.GetKeyDown(kc);
+        }
+
+        public static Vector2 PointerPos()
+        {
+            return Input.mousePosition;
         }
 
         public static Vector2 Move()

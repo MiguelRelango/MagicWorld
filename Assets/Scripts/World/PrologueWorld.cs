@@ -145,7 +145,7 @@ namespace Hearthbound
             Prim.Make(PrimitiveType.Cylinder, h, new Vector3(5.1f, 0.9f, 3.4f), new Vector3(0.7f, 0.04f, 0.7f), new Color(0.30f, 0.45f, 0.75f), false, "ShieldDisplay")
                 .transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
             Interactable gear = rack.AddComponent<Interactable>();
-            gear.Prompt = "Tomar espada y escudo";
+            gear.Prompt = "Tomar equipo (espada, escudo, varita, hacha)";
             gear.Range = 3.2f;
             gear.OnUse = () => { dir.OnGearTaken(); gear.Enabled = false; };
             dir.GearRack = gear;
@@ -318,14 +318,10 @@ namespace Hearthbound
             return (x - cx) * (x - cx) + (z - cz) * (z - cz) < r * r;
         }
 
+        /// <summary>Árbol del mundo (se puede talar con el hacha y vuelve a crecer).</summary>
         public static void Tree(Transform parent, Vector3 pos, float scale)
         {
-            GameObject t = new GameObject("Tree");
-            t.transform.SetParent(parent, false);
-            t.transform.position = pos;
-            Prim.Cyl(t.transform, new Vector3(0f, 1.1f * scale, 0f), new Vector3(0.55f, 1.1f, 0.55f) * scale, new Color(0.50f, 0.34f, 0.22f), true, "Trunk");
-            Prim.Ball(t.transform, new Vector3(0f, 3.1f * scale, 0f), new Vector3(3.0f, 2.6f, 3.0f) * scale, new Color(0.36f, 0.66f, 0.34f), false, "Leaves");
-            Prim.Ball(t.transform, new Vector3(0.7f * scale, 2.5f * scale, 0.4f * scale), new Vector3(2.0f, 1.8f, 2.0f) * scale, new Color(0.42f, 0.72f, 0.38f), false, "Leaves2");
+            TreeNode.Create(parent, pos, scale);
         }
     }
 }

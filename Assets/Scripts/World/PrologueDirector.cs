@@ -52,6 +52,7 @@ namespace Hearthbound
             checkpoint = PrologueWorld.PlayerStart;
 
             PrologueWorld.Build(this);
+            if (Builder.Instance != null) Builder.Instance.BeginWorld("prologue", true);
             SpawnPlayer(PrologueWorld.PlayerStart, 90f);
             SpawnPartner(PrologueWorld.PartnerStart, -90f);
 
@@ -72,6 +73,9 @@ namespace Hearthbound
 
             Game.HasSword = Game.HasShield = Game.HasBow = Game.HasBombs = true;
             Game.HasWand = true;
+            Game.HasAxe = true;
+            Game.Seeds = 3;
+            Game.Wood = 12;
             Game.Arrows = 20;
             Game.Bombs = 6;
             Game.ArmorLevel = 2;
@@ -79,6 +83,7 @@ namespace Hearthbound
 
             IslandWorld.Build(seed);
             IslandMap.Begin(seed);
+            if (Builder.Instance != null) Builder.Instance.BeginWorld("island_" + seed);
             IslandMode = true;
             Vector3 camp = IslandTerrain.Camp;
             checkpoint = camp + Vector3.up * 0.4f;
@@ -104,6 +109,8 @@ namespace Hearthbound
             PrologueWorld.Clear();
             IslandWorld.Clear();
             IslandMap.End();
+            TreeRegistry.Clear();
+            if (Builder.Instance != null) Builder.Instance.EndWorld();
             if (Panels.Instance != null) Panels.Instance.ClearSpawned();
             IslandMode = false;
             if (player != null) Destroy(player.gameObject);
@@ -225,10 +232,11 @@ namespace Hearthbound
             Game.HasSword = true;
             Game.HasShield = true;
             Game.HasWand = true;   // varita de prueba: lanza fuego (R)
+            Game.HasAxe = true;    // hacha para talar árboles (T)
             RefreshModel();
             Sfx.Play("pickup");
-            Game.Say("Espada, escudo y varita de fuego equipados", 3.5f);
-            Game.Dialog("Pareja", "Te sienta bien. Al huerto, al oeste. Tab fija al enemigo, J ataca, K bloquea. Y prueba la varita con R: al este de casa hay un cofre cubierto de enredaderas.", 9f);
+            Game.Say("Espada, escudo, varita y hacha equipados", 3.5f);
+            Game.Dialog("Pareja", "Te sienta bien. Al huerto, al oeste. Tab fija al enemigo, J ataca, K bloquea. Prueba la varita (R) en el cofre con enredaderas al este de casa, tala árboles con el hacha (T) y construye con X.", 10f);
             UpdateObjective();
         }
 
@@ -507,7 +515,7 @@ namespace Hearthbound
 
         public string CurrentHint()
         {
-            if (IslandMode) return "B: bomba   R: varita de fuego   Espacio: saltar   I: inventario   M: mapa grande   V: cámara   C: pareja";
+            if (IslandMode) return "T: hacha   G: plantar semilla   X: construir   R: varita   B: bomba   I: inventario   M: mapa   Espacio: saltar";
             if (!gearTaken) return "";
             if (!gardenDone) return "J: atacar   K: escudo (parry justo al golpe)   Tab: fijar   Shift: esquivar   Espacio: saltar   I: inventario";
             if (bowGiven && !bellRung) return "Mantén F para apuntar, suelta para disparar";

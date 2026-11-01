@@ -49,6 +49,9 @@ namespace Hearthbound
                 case "flash": return Tone(0.7f, 380f, 1500f, 0.25f, 3f);
                 case "fire": return Tone(0.25f, 260f, 120f, 0.7f, 5f);
                 case "wand": return Tone(0.3f, 500f, 900f, 0.2f, 5f);
+                case "chop": return Tone(0.14f, 150f, 80f, 0.55f, 9f);
+                case "build": return Tone(0.18f, 220f, 140f, 0.35f, 7f);
+                case "plant": return Tone(0.3f, 300f, 480f, 0.3f, 5f);
                 case "burn": return Tone(0.5f, 180f, 90f, 0.9f, 3.5f);
             }
             return Tone(0.1f, 440f, 440f, 0f, 6f);

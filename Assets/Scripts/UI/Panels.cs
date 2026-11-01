@@ -266,7 +266,11 @@ namespace Hearthbound
             l.Add(new Item { Name = "Gemas", Icon = 7, Owned = true, Count = Game.Gems.ToString(),
                 Desc = "Moneda del mundo: la sueltan los enemigos, las rocas agrietadas y los cofres. Servirán para mejorar el equipo." });
             l.Add(new Item { Name = "Madera", Icon = 8, Owned = true, Count = Game.Wood.ToString(),
-                Desc = "Material de construcción y mejoras de armadura." });
+                Desc = "Sale de los árboles que talas con el hacha. Se gasta en el modo construcción (" + Keys(Act.Build) + ") y en mejoras de armadura." });
+            l.Add(new Item { Name = "Hacha", Icon = 9, Owned = Game.HasAxe, Count = "",
+                Desc = "Pulsa " + Keys(Act.Axe) + " junto a un árbol: 4 hachazos lo derriban y sueltan madera y, a veces, semillas. El árbol vuelve a crecer desde el tocón en 30 minutos." });
+            l.Add(new Item { Name = "Semillas de árbol", Icon = 10, Owned = Game.Seeds > 0, Count = Game.Seeds > 0 ? Game.Seeds.ToString() : "",
+                Desc = "Pulsa " + Keys(Act.Plant) + " en tierra abierta para plantar un brote: en 10 minutos será un árbol. Las consigues al talar." });
             return l;
         }
 
@@ -403,6 +407,17 @@ namespace Hearthbound
                     RotFill(new Rect(cx - 20f * s, cy - 20f * s, 40f * s, 40f * s), 45f, c, new Color(0.30f, 0.85f, 0.95f, a));
                     RotFill(new Rect(cx - 8f * s, cy - 8f * s, 16f * s, 16f * s), 45f, c, new Color(0.85f, 1f, 1f, a));
                     break;
+                case 9: // hacha
+                    RotFill(new Rect(cx - 3f * s, cy - 30f * s, 6f * s, 66f * s), 35f, c, new Color(0.52f, 0.34f, 0.20f, a));
+                    RotFill(new Rect(cx - 6f * s, cy - 34f * s, 26f * s, 24f * s), 35f, c, new Color(0.72f, 0.75f, 0.80f, a));
+                    break;
+                case 10: // semillas
+                    Disc(new Rect(cx - 22f * s, cy + 2f * s, 18f * s, 12f * s), new Color(0.42f, 0.28f, 0.14f, a));
+                    Disc(new Rect(cx + 2f * s, cy + 8f * s, 18f * s, 12f * s), new Color(0.46f, 0.30f, 0.16f, a));
+                    Fill(new Rect(cx - 2f * s, cy - 24f * s, 4f * s, 26f * s), new Color(0.35f, 0.70f, 0.30f, a));
+                    Disc(new Rect(cx - 16f * s, cy - 26f * s, 18f * s, 12f * s), new Color(0.40f, 0.78f, 0.34f, a));
+                    Disc(new Rect(cx - 2f * s, cy - 32f * s, 18f * s, 12f * s), new Color(0.46f, 0.84f, 0.38f, a));
+                    break;
                 case 8: // madera
                     Fill(new Rect(cx - 30f * s, cy - 24f * s, 60f * s, 16f * s), new Color(0.55f, 0.38f, 0.22f, a));
                     Fill(new Rect(cx - 30f * s, cy - 6f * s, 60f * s, 16f * s), new Color(0.62f, 0.44f, 0.26f, a));
@@ -444,7 +459,9 @@ namespace Hearthbound
             Game.Arrows = Mathf.Max(Game.Arrows, 30);
             Game.Bombs = Mathf.Max(Game.Bombs, 20);
             Game.Gems += 50;
-            Game.Wood += 20;
+            Game.Wood += 50;
+            Game.HasAxe = true;
+            Game.Seeds += 10;
             Game.Mana = Game.MaxMana;
             if (director != null) { director.SetArmor(4, true); director.RefreshModel(); }
             devMsg = "Equipo completo entregado";
@@ -578,6 +595,21 @@ namespace Hearthbound
                 w.transform.rotation = Quaternion.Euler(0f, Game.Player.transform.eulerAngles.y + 90f, 0f);
                 devMsg = "Muro agrietado";
             }
+
+            GUILayout.Label("Árboles y construcción", small);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("+50 madera", btn, GUILayout.Height(30f))) { Game.Wood += 50; devMsg = "+50 madera"; }
+            if (GUILayout.Button("+10 semillas", btn, GUILayout.Height(30f))) { Game.Seeds += 10; devMsg = "+10 semillas"; }
+            GUILayout.EndHorizontal();
+            if (GUILayout.Button("Dar hacha", btn, GUILayout.Height(30f))) { Game.HasAxe = true; devMsg = "Hacha entregada"; }
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Árbol adulto", btn, GUILayout.Height(30f))) { TreeNode.Create(SpawnRoot(), FrontPoint(4f), 1.1f); devMsg = "Árbol"; }
+            if (GUILayout.Button("Brote (10 min)", btn, GUILayout.Height(30f))) { TreeRegistry.Plant(FrontPoint(3f)); devMsg = "Brote plantado"; }
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Crecer +10 min", btn, GUILayout.Height(30f))) { TreeRegistry.Skip(600f); devMsg = "Árboles: +10 minutos"; }
+            if (GUILayout.Button("Crecer +30 min", btn, GUILayout.Height(30f))) { TreeRegistry.Skip(1800f); devMsg = "Árboles: +30 minutos"; }
+            GUILayout.EndHorizontal();
 
             GUILayout.Label("Efectos", small);
             if (GUILayout.Button("Bomba encendida", btn, GUILayout.Height(30f))) { Bomb.Spawn(FrontPoint(3f) + Vector3.up * 0.8f, Vector3.zero); devMsg = "Bomba"; }

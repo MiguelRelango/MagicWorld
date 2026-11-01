@@ -12,6 +12,7 @@ namespace Hearthbound
         public Transform ShieldPivot;
         public Transform BowPivot;
         public Transform WandPivot;
+        public Transform AxePivot;
 
         Transform root;
         Transform body;
@@ -96,6 +97,15 @@ namespace Hearthbound
             Prim.Box(WandPivot, new Vector3(0f, 0f, 0.22f), new Vector3(0.05f, 0.05f, 0.62f), new Color(0.45f, 0.30f, 0.18f), false, "WandStick");
             Prim.Make(PrimitiveType.Sphere, WandPivot, new Vector3(0f, 0f, 0.58f), Vector3.one * 0.14f, new Color(1f, 0.5f, 0.1f), false, "WandGem", true);
             WandPivot.gameObject.SetActive(false);
+
+            // Hacha: mango de madera y cabeza de metal (solo se ve al talar).
+            GameObject ap = new GameObject("AxePivot");
+            AxePivot = ap.transform;
+            AxePivot.SetParent(root, false);
+            AxePivot.localPosition = new Vector3(0.42f, 0.95f, 0.30f);
+            Prim.Box(AxePivot, new Vector3(0f, 0f, 0.32f), new Vector3(0.06f, 0.06f, 0.78f), new Color(0.52f, 0.34f, 0.20f), false, "AxeHandle");
+            Prim.Box(AxePivot, new Vector3(0f, 0.10f, 0.62f), new Vector3(0.06f, 0.26f, 0.26f), new Color(0.72f, 0.75f, 0.80f), false, "AxeHead");
+            AxePivot.gameObject.SetActive(false);
         }
 
         void BuildHair(int style, Color c)

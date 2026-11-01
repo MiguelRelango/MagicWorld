@@ -40,6 +40,9 @@ Valores por defecto:
 | Arco (mantener y soltar) | F | Y |
 | Bomba | B | B |
 | Varita de fuego (gasta maná) | R | RT |
+| Hacha (talar árboles) | T | Cruz derecha |
+| Plantar semilla de árbol | G | — |
+| Modo construcción | X | — |
 | Interactuar | E | LB |
 | Ordenar a la pareja | C | Cruz abajo |
 | Mapa grande | M | Cruz arriba |
@@ -53,6 +56,15 @@ Valores por defecto:
 - **General:** volumen y modo desarrollador.
 - **Cámara:** cámara actual, velocidad de giro, sensibilidad del ratón, suavizado del seguimiento, inversión de ejes, botón de giro y restablecer.
 - **Controles:** reasignar cada acción (clic en la casilla, pulsa la tecla; Esc cancela, Supr borra).
+
+## Árboles y construcción
+
+- **Hacha (T):** 4 hachazos derriban un árbol y sueltan madera y, a veces, semillas. El hacha está en el perchero del prólogo y se tiene desde el inicio en la isla.
+- **Crecimiento:** al talar queda el tocón con un brote. Los árboles que vuelven a crecer solos tardan **30 minutos**; los brotes plantados con una **semilla (G)** tardan **10 minutos**.
+  El tiempo cuenta mientras juegas (con el juego en pausa no avanza). Cerca de un brote el HUD muestra cuánto le falta.
+- **Construcción (X):** el ratón elige dónde, la rueda cambia el nivel (altura), **1-5** eligen pieza (suelo, pared, puerta, techo, fogata),
+  clic izquierdo coloca (gasta madera) y clic derecho quita (devuelve la madera). Cuadrícula de 2 m; se guarda por mundo (isla = semilla).
+  Los árboles aún no se guardan entre sesiones.
 
 ## Mapa, inventario y modo dev
 

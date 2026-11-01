@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Hearthbound
 {
-    public enum PickupKind { Arrows, Gem, Bombs, Wood, Heart }
+    public enum PickupKind { Arrows, Gem, Bombs, Wood, Heart, Seed }
 
     /// <summary>Objeto recogible que flota y gira. Se recoge al acercarse.</summary>
     public class Pickup : MonoBehaviour
@@ -34,6 +34,10 @@ namespace Hearthbound
                 case PickupKind.Wood:
                     Prim.Cyl(go.transform, Vector3.zero, new Vector3(0.22f, 0.3f, 0.22f), new Color(0.55f, 0.36f, 0.2f), false, "Log")
                         .transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+                    break;
+                case PickupKind.Seed:
+                    Prim.Ball(go.transform, Vector3.zero, new Vector3(0.22f, 0.16f, 0.16f), new Color(0.42f, 0.28f, 0.14f), false, "Seed");
+                    Prim.Ball(go.transform, new Vector3(0f, 0.12f, 0f), Vector3.one * 0.1f, new Color(0.45f, 0.85f, 0.35f), false, "Sprout");
                     break;
                 case PickupKind.Heart:
                     Prim.Ball(go.transform, new Vector3(-0.08f, 0f, 0f), Vector3.one * 0.2f, new Color(0.95f, 0.3f, 0.4f), false, "L");
@@ -75,7 +79,8 @@ namespace Hearthbound
                 case PickupKind.Arrows: Game.Arrows = Mathf.Min(30, Game.Arrows + Mathf.Max(2, Amount)); Game.Say("+ flechas"); break;
                 case PickupKind.Gem: Game.Gems += Amount; Game.Say("+ gema"); break;
                 case PickupKind.Bombs: Game.HasBombs = true; Game.Bombs = Mathf.Min(20, Game.Bombs + Amount); Game.Say("+ bombas"); break;
-                case PickupKind.Wood: Game.Wood += Amount; Game.Say("+ leña"); break;
+                case PickupKind.Wood: Game.Wood += Amount; Game.Say("+ madera"); break;
+                case PickupKind.Seed: Game.Seeds += Amount; Game.Say("+ semilla de árbol"); break;
                 case PickupKind.Heart:
                     Health h = Game.Player.GetComponent<Health>();
                     if (h != null) h.Heal(1f);

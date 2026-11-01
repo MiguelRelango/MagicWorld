@@ -14,7 +14,7 @@ namespace Hearthbound
 
         public bool Blocking { get; private set; }
         public bool Aiming { get; private set; }
-        public bool MovementLocked { get { return attackLeft > 0f || recover > 0f; } }
+        public bool MovementLocked { get { return attackLeft > 0f || recover > 0f || axeLeft > 0f; } }
         public float SpeedMultiplier { get { return Aiming ? 0.45f : (Blocking ? 0.55f : 1f); } }
         public int ComboStep { get; private set; }
 
@@ -31,6 +31,9 @@ namespace Hearthbound
         float bowCharge;
         float bowReady;
         float bombReady;
+        float axeLeft;
+        bool axeHit;
+        float plantReady;
         float wandReady;
         float wandShow;
         float noManaToast;
@@ -83,6 +86,7 @@ namespace Hearthbound
             float dt = Time.deltaTime;
             if (attackLeft > 0f) attackLeft -= dt;
             if (recover > 0f) recover -= dt;
+            if (axeLeft > 0f) axeLeft -= dt;
             if (Time.time > comboUntil) ComboStep = 0;
 
             if (Game.HasWand) Game.Mana = Mathf.Min(Game.MaxMana, Game.Mana + 4f * dt);
@@ -94,17 +98,30 @@ namespace Hearthbound
             }
             if (wandShow > 0f) wandShow -= dt;
 
+            if (Game.Building)
+            {
+                // En modo construcción no se ataca: el clic coloca y quita piezas.
+                Blocking = false;
+                Aiming = false;
+                bowCharge = 0f;
+                wandShow = 0f;
+                UpdateSwing(dt);
+                return;
+            }
+
             UpdateSwing(dt);
             UpdateShield();
             UpdateBow(dt);
             UpdateBomb();
             UpdateWand();
+            UpdateAxe();
+            UpdatePlant();
             UpdateSword();
         }
 
         void UpdateSword()
         {
-            if (!Game.HasSword || Blocking || Aiming) return;
+            if (!Game.HasSword || Blocking || Aiming || axeLeft > 0f) return;
             if (GameInput.Pressed(Act.Attack) && attackLeft <= 0f && !Pc.Dodging)
             {
                 Pc.SnapToward(4.5f, 70f);
@@ -166,7 +183,7 @@ namespace Hearthbound
 
         void UpdateShield()
         {
-            bool want = Game.HasShield && GameInput.Held(Act.Block) && attackLeft <= 0f && !Aiming && !Pc.Dodging;
+            bool want = Game.HasShield && GameInput.Held(Act.Block) && attackLeft <= 0f && axeLeft <= 0f && !Aiming && !Pc.Dodging;
             if (want && !Blocking) blockStart = Time.time;
             Blocking = want;
         }
@@ -174,7 +191,7 @@ namespace Hearthbound
         void UpdateBow(float dt)
         {
             if (!Game.HasBow) { Aiming = false; return; }
-            if (attackLeft > 0f || Blocking || Pc.Dodging) { Aiming = false; bowCharge = 0f; return; }
+            if (attackLeft > 0f || axeLeft > 0f || Blocking || Pc.Dodging) { Aiming = false; bowCharge = 0f; return; }
 
             if (GameInput.Held(Act.Bow) && Game.Arrows > 0)
             {
@@ -230,7 +247,7 @@ namespace Hearthbound
         void UpdateWand()
         {
             if (!Game.HasWand || !GameInput.Pressed(Act.Wand)) return;
-            if (attackLeft > 0f || Blocking || Aiming || Pc.Dodging || Time.time < wandReady) return;
+            if (attackLeft > 0f || axeLeft > 0f || Blocking || Aiming || Pc.Dodging || Time.time < wandReady) return;
             if (Game.Mana < WandCost)
             {
                 if (Time.time >= noManaToast) { noManaToast = Time.time + 1.2f; Game.Say("Sin maná: golpea con la espada para recargar", 1.8f); Sfx.Play("ui", 0.6f, 0.5f); }
@@ -268,10 +285,81 @@ namespace Hearthbound
             return transform.forward;
         }
 
+        const float AxeTime = 0.45f;
+
+        /// <summary>Hacha: talar árboles (4 hachazos). Se golpea a mitad del movimiento.</summary>
+        void UpdateAxe()
+        {
+            if (Game.HasAxe && GameInput.Pressed(Act.Axe) && axeLeft <= 0f && attackLeft <= 0f && !Blocking && !Aiming && !Pc.Dodging)
+            {
+                axeLeft = AxeTime;
+                axeHit = false;
+                TreeNode t = TreeNode.Target(transform.position, transform.forward, 2.6f, 75f);
+                if (t != null)
+                {
+                    Vector3 to = Nav.Flat(t.transform.position - transform.position);
+                    if (to.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(to.normalized);
+                }
+                Sfx.Play("swing", 0.7f, 0.6f);
+            }
+
+            if (axeLeft > 0f && !axeHit && axeLeft < AxeTime * 0.5f)
+            {
+                axeHit = true;
+                TreeNode t = TreeNode.Target(transform.position, transform.forward, 2.6f, 75f);
+                if (t != null) t.Chop(transform.position);
+            }
+        }
+
+        /// <summary>Planta una semilla delante del jugador: brote que tarda 10 minutos en ser árbol.</summary>
+        void UpdatePlant()
+        {
+            if (!GameInput.Pressed(Act.Plant) || Time.time < plantReady) return;
+            plantReady = Time.time + 0.5f;
+            if (Game.Seeds <= 0) { Game.Say("No tienes semillas: tala árboles para conseguirlas", 2.5f); return; }
+
+            Vector3 p = transform.position + transform.forward * 1.8f;
+            RaycastHit hit;
+            if (!Physics.Raycast(p + Vector3.up * 3f, Vector3.down, out hit, 10f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                Game.Say("No se puede plantar aquí", 2f);
+                return;
+            }
+            string n = hit.collider.name;
+            bool ground = n == "Ground" || n.StartsWith("Chunk");
+            if (!ground || (IslandMap.Active && (hit.point.y < 1.1f || hit.point.y > 11f)))
+            {
+                Game.Say("Solo se planta en tierra firme", 2f);
+                return;
+            }
+            if (Physics.Raycast(hit.point + Vector3.up * 0.3f, Vector3.up, 6f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                Game.Say("Necesita cielo abierto", 2f);
+                return;
+            }
+            Collider[] near = Physics.OverlapSphere(hit.point + Vector3.up * 0.9f, 0.9f, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < near.Length; i++)
+            {
+                if (near[i].GetComponentInParent<PlayerController>() != null) continue;
+                if (near[i].name == "Ground" || near[i].name.StartsWith("Chunk")) continue;
+                Game.Say("Hay algo en el camino", 2f);
+                return;
+            }
+            for (int i = 0; i < TreeNode.All.Count; i++)
+            {
+                if (Vector3.Distance(Nav.Flat(TreeNode.All[i].transform.position), Nav.Flat(hit.point)) < 1.6f) { Game.Say("Muy cerca de otro árbol", 2f); return; }
+            }
+
+            Game.Seeds--;
+            TreeRegistry.Plant(hit.point);
+            Sfx.Play("plant");
+            Game.Say("Semilla plantada: será un árbol en " + TreeNode.FormatTime(TreeRegistry.PlantedGrowSeconds), 3f);
+        }
+
         void UpdateBomb()
         {
             if (!Game.HasBombs || Game.Bombs <= 0) return;
-            if (GameInput.Pressed(Act.Bomb) && Time.time >= bombReady && !Pc.Dodging && attackLeft <= 0f)
+            if (GameInput.Pressed(Act.Bomb) && Time.time >= bombReady && !Pc.Dodging && attackLeft <= 0f && axeLeft <= 0f)
             {
                 bombReady = Time.time + 0.5f;
                 Game.Bombs--;
@@ -287,7 +375,7 @@ namespace Hearthbound
             if (Model == null) return;
             if (Model.SwordPivot != null)
             {
-                Model.SwordPivot.gameObject.SetActive(Game.HasSword && !Aiming);
+                Model.SwordPivot.gameObject.SetActive(Game.HasSword && !Aiming && axeLeft <= 0f);
                 float t = attackLeft > 0f ? 1f - attackLeft / AttackTime : 1f;
                 float sign = (ComboStep % 2 == 1) ? 1f : -1f;
                 float angle = attackLeft > 0f ? Mathf.Lerp(-80f * sign, 90f * sign, t) : 0f;
@@ -301,6 +389,12 @@ namespace Hearthbound
                 Model.ShieldPivot.localPosition = Vector3.Lerp(Model.ShieldPivot.localPosition, target, 1f - Mathf.Exp(-18f * dt));
                 Quaternion rot = Blocking ? Quaternion.identity : Quaternion.Euler(0f, 70f, 0f);
                 Model.ShieldPivot.localRotation = Quaternion.Slerp(Model.ShieldPivot.localRotation, rot, 1f - Mathf.Exp(-18f * dt));
+            }
+            if (Model.AxePivot != null)
+            {
+                Model.AxePivot.gameObject.SetActive(Game.HasAxe && axeLeft > 0f);
+                float k = 1f - Mathf.Clamp01(axeLeft / AxeTime);
+                Model.AxePivot.localRotation = Quaternion.Euler(Mathf.Lerp(-70f, 70f, k * k), 0f, 0f);
             }
             if (Model.WandPivot != null)
             {
