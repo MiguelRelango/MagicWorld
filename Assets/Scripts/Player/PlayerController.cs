@@ -73,7 +73,7 @@ namespace Hearthbound
             if (Game.State != GameState.Playing) return;
             if (Hp != null && Hp.Dead) { dodgeLeft = 0f; if (Model != null) Model.ResetRoll(); return; }
 
-            HandleLock();
+            if (!CraftingSystem.IsWorking) HandleLock();
 
             Vector3 input = Vector3.zero;
             Vector2 m = GameInput.Move();
@@ -82,7 +82,7 @@ namespace Hearthbound
             else
                 input = new Vector3(m.x, 0f, m.y);
 
-            bool busy = Combat != null && Combat.MovementLocked;
+            bool busy = CraftingSystem.IsWorking || (Combat != null && Combat.MovementLocked);
             Vector3 move = Vector3.zero;
 
             if (GameInput.Pressed(Act.Dodge) && Time.time >= dodgeReady && !busy && !Dodging && cc.isGrounded)

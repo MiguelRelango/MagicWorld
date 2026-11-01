@@ -38,6 +38,7 @@ namespace Hearthbound
             BuildBell(dir);
             BuildScenery();
             BuildVineChest();
+            CraftingSystem.Bench(Root, new Vector3(8f, 0f, -7f));
             BuildCave(dir);
         }
 

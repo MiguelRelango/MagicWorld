@@ -80,6 +80,14 @@ namespace Hearthbound
         {
             if (Game.State != GameState.Playing || Hp.Dead) return;
 
+            if (CraftingSystem.IsWorking)
+            {
+                Blocking = false; Aiming = false;
+                if (Model != null)
+                    foreach (Transform item in new[] {Model.SwordPivot, Model.ShieldPivot, Model.BowPivot, Model.WandPivot})
+                        if (item != null) item.gameObject.SetActive(false);
+                return;
+            }
             float dt = Time.deltaTime;
             if (attackLeft > 0f) attackLeft -= dt;
             if (recover > 0f) recover -= dt;

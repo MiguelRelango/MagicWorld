@@ -30,6 +30,7 @@ namespace Hearthbound
             hud.Director = dir;
             root.AddComponent<Minimap>();
             root.AddComponent<Panels>();
+            root.AddComponent<CraftingSystem>();
             MenuUI ui = root.AddComponent<MenuUI>();
             ui.Director = dir;
 

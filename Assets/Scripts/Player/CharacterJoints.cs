@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Animations;
 
 namespace Hearthbound
 {
@@ -15,6 +17,11 @@ namespace Hearthbound
         PlayerCombat combat;
         float desiredSpeed, speed, phase, roll = -1f;
         bool clipsAvailable;
+        bool crafting;
+        PlayableGraph craftGraph;
+        AnimationClipPlayable craftPlayable;
+        float craftPhase;
+        AnimationClip craftClip;
         static readonly int SpeedKey = Animator.StringToHash("Speed");
         static readonly int GroundedKey = Animator.StringToHash("Grounded");
 
@@ -99,7 +106,8 @@ namespace Hearthbound
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             RuntimeAnimatorController clips = Resources.Load<RuntimeAnimatorController>("CharacterMotion/HumanLocomotion");
             clipsAvailable = clips != null && avatar != null && avatar.isValid && avatar.isHuman;
-            if (clipsAvailable) { animator.avatar = avatar; animator.runtimeAnimatorController = clips; }
+            if (avatar != null && avatar.isValid && avatar.isHuman) animator.avatar = avatar;
+            if (clipsAvailable) animator.runtimeAnimatorController = clips;
             animator.enabled = clipsAvailable;
         }
 
@@ -154,6 +162,26 @@ namespace Hearthbound
         void Pose(HumanBodyBones bone,float x,float y,float z,float blend)
         { Transform t=Bone(bone);t.localRotation=Quaternion.Slerp(t.localRotation,Quaternion.Euler(x,y,z)*neutral[bone],blend); }
 
+        public void StartCraftingMotion()
+        {
+            StopCraftingMotion(); crafting=true;craftPhase=0;
+            var settings=Resources.Load<CraftingMotionSet>("CharacterMotion/CraftingMotion");
+            craftClip=settings != null ? settings.Work : null;
+            if(craftClip == null || !craftClip.humanMotion || avatar == null || !avatar.isValid || !avatar.isHuman) return;
+            animator.enabled=true;animator.applyRootMotion=false;
+            craftGraph=PlayableGraph.Create("Crafting motion");craftGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+            craftPlayable=AnimationClipPlayable.Create(craftGraph,craftClip);
+            craftPlayable.SetApplyFootIK(true);
+            var output=AnimationPlayableOutput.Create(craftGraph,"Crafting",animator);output.SetSourcePlayable(craftPlayable);
+            craftGraph.Play();
+        }
+        public void StopCraftingMotion()
+        {
+            crafting=false;
+            if(craftGraph.IsValid())craftGraph.Destroy();
+            if(animator != null)animator.enabled=clipsAvailable;
+        }
+
         void LateUpdate()
         {
             if(bones.Count == 0) return;
@@ -161,6 +189,23 @@ namespace Hearthbound
             if (animator != null) animator.speed = paused ? 0f : 1f;
             if (paused) return;
             float dt=Time.deltaTime, blend=1f-Mathf.Exp(-16f*dt);
+            if(crafting)
+            {
+                craftPhase+=dt;
+                if(craftGraph.IsValid())
+                {
+                    craftPlayable.SetTime(craftPhase % Mathf.Max(.01f,craftClip.length));craftGraph.Evaluate(0f);return;
+                }
+                animator.enabled=false;
+                Bone(HumanBodyBones.Hips).localPosition=new Vector3(0,.65f,0);
+                Pose(HumanBodyBones.Spine,12f,0,0,blend);Pose(HumanBodyBones.Head,15f,0,0,blend);
+                Pose(HumanBodyBones.LeftUpperArm,-65f,0,0,blend);
+                Pose(HumanBodyBones.RightUpperArm,-70f+Mathf.Sin(craftPhase*8f)*18f,0,0,blend);
+                Pose(HumanBodyBones.LeftLowerArm,0,35f,0,blend);Pose(HumanBodyBones.RightLowerArm,0,-45f,0,blend);
+                Pose(HumanBodyBones.LeftUpperLeg,0,0,0,blend);Pose(HumanBodyBones.RightUpperLeg,0,0,0,blend);
+                Pose(HumanBodyBones.LeftLowerLeg,0,0,0,blend);Pose(HumanBodyBones.RightLowerLeg,0,0,0,blend);
+                return;
+            }
             speed=Mathf.Lerp(speed,desiredSpeed,1f-Mathf.Exp(-10f*dt));
             bool airborne=player != null && player.Airborne;
             bool combatPose=combat != null && (combat.MovementLocked || combat.Blocking || combat.Aiming || (combat.Model != null && combat.Model.WandPivot.gameObject.activeSelf));
@@ -192,6 +237,6 @@ namespace Hearthbound
             Pose(HumanBodyBones.LeftLowerArm,0,12f+18f*speed+65f*tuck,0,blend);
             Pose(HumanBodyBones.RightLowerArm,0,-12f-18f*speed-65f*tuck,0,blend);
         }
-        void OnDestroy() { if(avatar != null) Destroy(avatar); }
+        void OnDestroy() { StopCraftingMotion(); if(avatar != null) Destroy(avatar); }
     }
 }

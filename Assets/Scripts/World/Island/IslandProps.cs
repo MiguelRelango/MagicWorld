@@ -257,6 +257,8 @@ namespace Hearthbound
             Prim.Box(rg.transform, new Vector3(0.35f, 1.7f, 0f), new Vector3(0.7f, 0.5f, 0.05f), new Color(0.95f, 0.55f, 0.62f), false, "Banner");
             rg.AddComponent<Refuge>().Radius = 3.5f;
 
+            CraftingSystem.Bench(t, At(camp.x + 4f, camp.z - 4f));
+
             // Letrero
             Vector3 sign = At(camp.x + 1.5f, camp.z - 5f);
             Prim.Box(t, sign + new Vector3(0f, 0.7f, 0f), new Vector3(0.18f, 1.4f, 0.18f), new Color(0.60f, 0.40f, 0.24f), false, "SignPost");
