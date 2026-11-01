@@ -86,6 +86,22 @@ namespace Hearthbound
             if (cc == null) cc = GetComponent<CharacterController>();
         }
 
+        /// <summary>Mueve a la pareja de golpe (modo dev / teletransporte).</summary>
+        public void Teleport(Vector3 pos)
+        {
+            if (cc != null) cc.enabled = false;
+            transform.position = pos;
+            if (cc != null) cc.enabled = true;
+            vy = 0f;
+        }
+
+        /// <summary>La levanta y le devuelve toda la moral.</summary>
+        public void Recover()
+        {
+            Downed = false;
+            Morale = 1f;
+        }
+
         /// <summary>Golpe recibido: nunca muere. Pierde moral y puede quedar desplomada.</summary>
         public void TakeHit(Vector3 from)
         {

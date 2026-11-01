@@ -46,6 +46,7 @@ namespace Hearthbound
 
         bool IncomingBlocked(Vector3 from)
         {
+            if (Game.GodMode) return true;              // modo dev: invulnerable
             if (Pc != null && Pc.Dodging) return true; // invulnerable durante la esquiva
             if (!Blocking || !Game.HasShield) return false;
             Vector3 to = Nav.Flat(from - transform.position);
@@ -85,6 +86,12 @@ namespace Hearthbound
             if (Time.time > comboUntil) ComboStep = 0;
 
             if (Game.HasWand) Game.Mana = Mathf.Min(Game.MaxMana, Game.Mana + 4f * dt);
+            if (Game.InfMana) Game.Mana = Game.MaxMana;
+            if (Game.InfAmmo)
+            {
+                if (Game.HasBow) Game.Arrows = Mathf.Max(Game.Arrows, 30);
+                if (Game.HasBombs) Game.Bombs = Mathf.Max(Game.Bombs, 20);
+            }
             if (wandShow > 0f) wandShow -= dt;
 
             UpdateSwing(dt);

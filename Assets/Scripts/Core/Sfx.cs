@@ -45,6 +45,7 @@ namespace Hearthbound
                 case "ui": return Tone(0.06f, 700f, 800f, 0f, 10f);
                 case "door": return Tone(0.5f, 110f, 70f, 0.6f, 3f);
                 case "heal": return Tone(0.4f, 500f, 900f, 0f, 3f);
+                case "jump": return Tone(0.16f, 260f, 520f, 0.05f, 6f);
                 case "flash": return Tone(0.7f, 380f, 1500f, 0.25f, 3f);
                 case "fire": return Tone(0.25f, 260f, 120f, 0.7f, 5f);
                 case "wand": return Tone(0.3f, 500f, 900f, 0.2f, 5f);

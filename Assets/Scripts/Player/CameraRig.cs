@@ -82,7 +82,8 @@ namespace Hearthbound
             // ---- Entrada: giro, inclinación y zoom ----
             bool drag = GameInput.DragHeld();
             Vector2 d = drag ? GameInput.PointerDelta() : Vector2.zero;
-            float sens = 0.12f * MenuUI.CameraSpeed;
+            Follow = Settings.CamFollow;
+            float sens = 0.12f * MenuUI.CameraSpeed * Settings.MouseSens;
             float axis = GameInput.CameraAxis();
             float pAxis = GameInput.CameraPitchAxis();
 
@@ -98,10 +99,10 @@ namespace Hearthbound
             }
             else
             {
-                Yaw += axis * TurnSpeed * dt + d.x * sens;
+                Yaw += axis * TurnSpeed * dt + d.x * sens * (Settings.InvertX ? -1f : 1f);
             }
 
-            float dp = -d.y * sens - pAxis * 60f * dt;   // ratón arriba / flecha arriba = mirar hacia arriba
+            float dp = -d.y * sens * (Settings.InvertY ? -1f : 1f) - pAxis * 60f * dt;   // ratón arriba / flecha arriba = mirar hacia arriba
             if (Mode == CameraMode.Aerial) aerialPitch = Mathf.Clamp(aerialPitch + dp, 30f, 70f);
             else shoulderPitch = Mathf.Clamp(shoulderPitch + dp, -12f, 50f);
 

@@ -14,6 +14,8 @@ namespace Hearthbound
         public float DodgeTime = 0.28f;
         public float DodgeCooldown = 0.45f;
         public float Gravity = -24f;
+        /// <summary>Salto bajo (~0.75 m): sirve para cruzar desniveles pequeños, no para escalar.</summary>
+        public float JumpSpeed = 6.0f;
 
         public CameraRig Rig;
         public CharacterModel Model;
@@ -32,6 +34,8 @@ namespace Hearthbound
         Vector3 dodgeDir;
         Vector3 knock;
         float speedNow;
+        float coyote, jumpBuffer;
+        public bool Airborne { get { return cc != null && !cc.isGrounded; } }
 
         void Awake()
         {
@@ -93,6 +97,17 @@ namespace Hearthbound
             }
 
             if (cc.isGrounded && vy < 0f) vy = -2f;
+
+            // Salto con pequeño margen antes/después de tocar el suelo (más cómodo).
+            coyote = cc.isGrounded ? 0.12f : coyote - Time.deltaTime;
+            jumpBuffer = GameInput.Pressed(Act.Jump) ? 0.12f : jumpBuffer - Time.deltaTime;
+            if (jumpBuffer > 0f && coyote > 0f && !busy && !Dodging)
+            {
+                vy = JumpSpeed;
+                jumpBuffer = 0f;
+                coyote = 0f;
+                Sfx.Play("jump", 1f, 0.5f);
+            }
             vy += Gravity * Time.deltaTime;
 
             knock = Vector3.Lerp(knock, Vector3.zero, 1f - Mathf.Exp(-9f * Time.deltaTime));

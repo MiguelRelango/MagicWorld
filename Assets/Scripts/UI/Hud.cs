@@ -55,6 +55,7 @@ namespace Hearthbound
             DrawDialog(W, H);
             DrawToast(W, H);
             DrawHint(W, H);
+            DrawDevBadge(H);
             DrawLockMarker(s);
             DrawCrosshair(W, H);
             if (Minimap.Instance != null) Minimap.Instance.Draw(new Rect(W - 192f, 18f, 172f, 172f));
@@ -102,6 +103,17 @@ namespace Hearthbound
             Fill(new Rect(cx - 1, cy + 4, 2, 8), col);
             Fill(new Rect(cx - 12, cy - 1, 8, 2), col);
             Fill(new Rect(cx + 4, cy - 1, 8, 2), col);
+        }
+
+        void DrawDevBadge(float H)
+        {
+            if (!Settings.Dev) return;
+            string t = "DEV (" + GameInput.KeyName(GameInput.Get(Act.Dev, 0)) + ")";
+            if (Game.GodMode) t += "  invulnerable";
+            if (Game.InfMana) t += "  maná inf.";
+            if (Game.InfAmmo) t += "  munición inf.";
+            Fill(new Rect(14, H - 34f, 320, 22), new Color(0.35f, 0.05f, 0.45f, 0.75f));
+            GUI.Label(new Rect(20, H - 36f, 320, 24), t, small);
         }
 
         void DrawFlash(float W, float H)

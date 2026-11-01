@@ -17,6 +17,8 @@ namespace Hearthbound
             Light[] lights = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
             for (int i = 0; i < lights.Length; i++) lights[i].gameObject.SetActive(false);
 
+            GameInput.Load();
+            Settings.Load();
             EnsureCamera();
 
             Application.targetFrameRate = 60;
@@ -27,6 +29,7 @@ namespace Hearthbound
             Hud hud = root.AddComponent<Hud>();
             hud.Director = dir;
             root.AddComponent<Minimap>();
+            root.AddComponent<Panels>();
             MenuUI ui = root.AddComponent<MenuUI>();
             ui.Director = dir;
 

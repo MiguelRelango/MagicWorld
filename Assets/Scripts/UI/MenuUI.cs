@@ -10,7 +10,7 @@ namespace Hearthbound
     {
         public PrologueDirector Director;
 
-        enum Screen_ { Main, Creator, Multi, Options, Controls }
+        enum Screen_ { Main, Creator, Multi, Options }
         Screen_ screen = Screen_.Main;
         bool fromPause;
         float camT;
@@ -117,7 +117,7 @@ namespace Hearthbound
         void Update()
         {
             // Reanudar con Escape cuando está en pausa
-            if (Game.State == GameState.Paused && screen == Screen_.Main && Time.frameCount > Game.PauseFrame && GameInput.Pressed(Act.Pause))
+            if (Game.State == GameState.Paused && Game.Panel == UiPanel.None && screen == Screen_.Main && Time.frameCount > Game.PauseFrame && GameInput.Pressed(Act.Pause))
                 Resume();
             if (Game.State == GameState.Ended && Director != null && Director.Finished) { /* pantalla final en OnGUI */ }
         }
@@ -138,10 +138,11 @@ namespace Hearthbound
             GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
             float W = UnityEngine.Screen.width / s, H = UnityEngine.Screen.height / s;
 
+            HandleCapture();
             switch (Game.State)
             {
                 case GameState.Menu: DrawMenu(W, H); break;
-                case GameState.Paused: DrawPause(W, H); break;
+                case GameState.Paused: if (Game.Panel == UiPanel.None) DrawPause(W, H); break;
                 case GameState.Ended: DrawEnd(W, H); break;
             }
             GUI.matrix = old;
@@ -155,7 +156,6 @@ namespace Hearthbound
                 case Screen_.Creator: DrawCreator(W, H); break;
                 case Screen_.Multi: DrawMulti(W, H); break;
                 case Screen_.Options: DrawOptions(W, H); break;
-                case Screen_.Controls: DrawControls(W, H); break;
             }
         }
 
@@ -184,8 +184,8 @@ namespace Hearthbound
 
             if (Btn(new Rect(x, y + step * 2, 320, bh), "Creador de personajes")) { screen = Screen_.Creator; MenuScene.PreviewArmor = 1; MenuScene.RefreshHero(); }
             if (Btn(new Rect(x, y + step * 3, 320, bh), "Multijugador")) screen = Screen_.Multi;
-            if (Btn(new Rect(x, y + step * 4, 320, bh), "Opciones")) { screen = Screen_.Options; fromPause = false; }
-            if (Btn(new Rect(x, y + step * 5, 320, bh), "Controles")) screen = Screen_.Controls;
+            if (Btn(new Rect(x, y + step * 4, 320, bh), "Opciones")) { screen = Screen_.Options; optTab = OptTab.General; fromPause = false; optScroll = Vector2.zero; }
+            if (Btn(new Rect(x, y + step * 5, 320, bh), "Controles")) { screen = Screen_.Options; optTab = OptTab.Controls; fromPause = false; optScroll = Vector2.zero; }
 #if !UNITY_WEBGL
             if (Btn(new Rect(x, y + step * 6, 320, bh), "Salir"))
             {
@@ -282,42 +282,146 @@ namespace Hearthbound
             if (Btn(new Rect(p.x + 20, p.yMax - 66, 480, 46), "Volver")) screen = Screen_.Main;
         }
 
+        enum OptTab { General, Camera, Controls }
+        OptTab optTab = OptTab.General;
+        Vector2 optScroll;
+        bool capturing;
+        Act capAct;
+        int capSlot;
+
         void DrawOptions(float W, float H)
         {
-            Rect p = new Rect(30, 40, 520, 440);
+            Rect p = new Rect(30, 30, 780, 600);
             Fill(new Rect(p.x - 4, p.y - 4, p.width + 8, p.height + 8), new Color(0.95f, 0.78f, 0.4f, 0.9f));
-            Fill(p, new Color(0.17f, 0.13f, 0.20f, 0.92f));
-            GUI.Label(new Rect(p.x + 20, p.y + 12, 480, 40), "Opciones", lbl);
+            Fill(p, new Color(0.17f, 0.13f, 0.20f, 0.95f));
+            GUI.Label(new Rect(p.x + 20, p.y + 10, 480, 40), "Opciones", lbl);
             DrawOptionsBody(p);
-            if (Btn(new Rect(p.x + 20, p.yMax - 66, 480, 46), "Volver"))
+            if (Btn(new Rect(p.x + 20, p.yMax - 62, 740, 46), "Volver"))
             {
-                Sfx.Play("ui");
+                capturing = false;
                 screen = Screen_.Main;
             }
         }
 
-        /// <summary>Controles comunes de Opciones (menú principal y pausa).</summary>
+        /// <summary>Opciones con pestañas (menú principal y pausa): General, Cámara y Controles.</summary>
         void DrawOptionsBody(Rect p)
         {
-            GUI.Label(new Rect(p.x + 20, p.y + 56, 480, 30), "Volumen de efectos: " + Mathf.RoundToInt(Sfx.Volume * 100f) + "%", lbl);
-            float v = GUI.HorizontalSlider(new Rect(p.x + 20, p.y + 90, 480, 24), Sfx.Volume, 0f, 1f);
-            if (!Mathf.Approximately(v, Sfx.Volume)) { Sfx.Volume = v; PlayerPrefs.SetFloat("volume", v); }
+            string[] names = { "General", "Cámara", "Controles" };
+            for (int i = 0; i < 3; i++)
+            {
+                Rect t = new Rect(p.x + 20 + i * 250, p.y + 54, 240, 40);
+                if (Btn(t, names[i])) { optTab = (OptTab)i; capturing = false; optScroll = Vector2.zero; }
+                if ((int)optTab == i) Fill(new Rect(t.x, t.yMax + 2, t.width, 4), Color.white);
+            }
 
-            GUI.Label(new Rect(p.x + 20, p.y + 126, 480, 30), "Sensibilidad de cámara: " + CameraSpeed.ToString("0.0") + "x", lbl);
-            float c = GUI.HorizontalSlider(new Rect(p.x + 20, p.y + 160, 480, 24), CameraSpeed, 0.4f, 2f);
+            Rect view = new Rect(p.x + 16, p.y + 108, p.width - 32, p.height - 108 - 74);
+            switch (optTab)
+            {
+                case OptTab.General: DrawGeneralTab(view); break;
+                case OptTab.Camera: DrawCameraTab(view); break;
+                default: DrawControlsTab(view); break;
+            }
+        }
+
+        float Slider(Rect view, float y, string text, float value, float min, float max)
+        {
+            GUI.Label(new Rect(view.x + 4, y, view.width - 8, 28), text, lbl);
+            return GUI.HorizontalSlider(new Rect(view.x + 4, y + 32, view.width - 40, 22), value, min, max);
+        }
+
+        void DrawGeneralTab(Rect v)
+        {
+            GUI.BeginGroup(v);
+            Rect g = new Rect(0, 0, v.width, v.height);
+            float vol = Slider(g, 4, "Volumen de efectos: " + Mathf.RoundToInt(Sfx.Volume * 100f) + "%", Sfx.Volume, 0f, 1f);
+            if (!Mathf.Approximately(vol, Sfx.Volume)) { Sfx.Volume = vol; PlayerPrefs.SetFloat("volume", vol); }
+
+            GUI.Label(new Rect(4, 80, g.width - 8, 28), "Modo desarrollador: " + (Settings.Dev ? "ACTIVADO" : "desactivado"), lbl);
+            if (Btn(new Rect(4, 114, 360, 42), Settings.Dev ? "Desactivar modo dev" : "Activar modo dev"))
+            {
+                Settings.Dev = !Settings.Dev;
+                Settings.Save();
+            }
+            GUI.Label(new Rect(4, 164, g.width - 8, 120),
+                "Con el modo dev activado, " + GameInput.KeyName(GameInput.Get(Act.Dev, 0)) + " abre un panel durante la partida para " +
+                "dar equipo, hacer aparecer enemigos, cofres, enredaderas y rocas, probar efectos y teletransportarte. " +
+                "Puedes cambiar esa tecla en Controles.", panelLbl);
+            GUI.EndGroup();
+        }
+
+        void DrawCameraTab(Rect v)
+        {
+            float contentH = 520f;
+            optScroll = GUI.BeginScrollView(v, optScroll, new Rect(0, 0, v.width - 20, contentH));
+            Rect g = new Rect(0, 0, v.width - 20, contentH);
+            float y = 4;
+
+            GUI.Label(new Rect(4, y, g.width - 8, 28), "Cámara actual: " + (CameraRig.Mode == CameraMode.Aerial ? "Aérea" : "Sobre el hombro"), lbl);
+            if (Btn(new Rect(4, y + 32, 360, 40), "Cambiar cámara (" + GameInput.KeyName(GameInput.Get(Act.CameraMode, 0)) + ")")) CameraRig.Toggle();
+            y += 86;
+
+            float c = Slider(g, y, "Velocidad de giro (teclas y mando): " + CameraSpeed.ToString("0.0") + "x", CameraSpeed, 0.4f, 2f);
             if (!Mathf.Approximately(c, CameraSpeed)) { CameraSpeed = c; PlayerPrefs.SetFloat("camSpeed", c); ApplyCameraSpeed(); }
+            y += 64;
 
-            GUI.Label(new Rect(p.x + 20, p.y + 196, 480, 30), "Cámara (V): " + (CameraRig.Mode == CameraMode.Aerial ? "Aérea" : "Sobre el hombro"), lbl);
-            if (Btn(new Rect(p.x + 20, p.y + 228, 480, 40), "Cambiar cámara")) CameraRig.Toggle();
+            float ms = Slider(g, y, "Sensibilidad del ratón: " + Settings.MouseSens.ToString("0.0") + "x", Settings.MouseSens, 0.3f, 3f);
+            if (!Mathf.Approximately(ms, Settings.MouseSens)) { Settings.MouseSens = ms; Settings.Save(); }
+            y += 64;
 
-            GUI.Label(new Rect(p.x + 20, p.y + 280, 480, 30), "Girar cámara con el ratón: " + (GameInput.RightClickCamera ? "botón derecho" : "botón central"), lbl);
-            if (Btn(new Rect(p.x + 20, p.y + 312, 480, 40), "Cambiar botón de giro"))
+            float cf = Slider(g, y, "Seguimiento de la cámara: " + Settings.CamFollow.ToString("0") + "  (bajo = suave, alto = rígida)", Settings.CamFollow, 3f, 20f);
+            if (!Mathf.Approximately(cf, Settings.CamFollow)) { Settings.CamFollow = cf; Settings.Save(); }
+            y += 64;
+
+            if (Btn(new Rect(4, y, 360, 40), "Invertir horizontal: " + (Settings.InvertX ? "sí" : "no"))) { Settings.InvertX = !Settings.InvertX; Settings.Save(); }
+            if (Btn(new Rect(376, y, 360, 40), "Invertir vertical: " + (Settings.InvertY ? "sí" : "no"))) { Settings.InvertY = !Settings.InvertY; Settings.Save(); }
+            y += 56;
+
+            GUI.Label(new Rect(4, y, g.width - 8, 28), "Girar con el ratón: mantener " + (GameInput.RightClickCamera ? "botón derecho" : "botón central"), lbl);
+            if (Btn(new Rect(4, y + 32, 360, 40), "Cambiar botón de giro"))
             {
                 GameInput.RightClickCamera = !GameInput.RightClickCamera;
                 PlayerPrefs.SetInt("dragRight", GameInput.RightClickCamera ? 1 : 0);
             }
+            if (Btn(new Rect(376, y + 32, 360, 40), "Restablecer cámara")) Settings.ResetCamera();
             if (GameInput.RightClickCamera)
-                GUI.Label(new Rect(p.x + 20, p.y + 356, 480, 24), "Con el botón derecho para girar, el escudo queda en K.", panelLbl);
+                GUI.Label(new Rect(4, y + 76, g.width - 8, 24), "Con el botón derecho para girar, el escudo queda solo en su tecla.", panelLbl);
+            GUI.EndScrollView();
+        }
+
+        void DrawControlsTab(Rect v)
+        {
+            int n = GameInput.Rebindable.Length;
+            float rowH = 40f;
+            float contentH = 70f + n * rowH + 190f;
+            optScroll = GUI.BeginScrollView(v, optScroll, new Rect(0, 0, v.width - 20, contentH));
+            float w = v.width - 20;
+
+            GUI.Label(new Rect(4, 2, w - 8, 60), capturing
+                ? "Pulsa la nueva tecla o botón del ratón para \"" + GameInput.Label(capAct) + "\"…   (Esc cancela, Supr borra)"
+                : "Haz clic en una casilla y pulsa la nueva tecla. Cada acción admite dos. Si repites una tecla, se le quita a la otra acción.", panelLbl);
+
+            for (int i = 0; i < n; i++)
+            {
+                Act a = GameInput.Rebindable[i];
+                float y = 66f + i * rowH;
+                if (i % 2 == 0) Fill(new Rect(0, y - 2, w, rowH - 2), new Color(1f, 1f, 1f, 0.05f));
+                GUI.Label(new Rect(8, y, 300, 34), GameInput.Label(a), lbl);
+                for (int slot = 0; slot < 2; slot++)
+                {
+                    bool active = capturing && capAct == a && capSlot == slot;
+                    string text = active ? "Pulsa una tecla…" : GameInput.KeyName(GameInput.Get(a, slot));
+                    if (Btn(new Rect(320 + slot * 210, y, 200, 34), text)) { capturing = true; capAct = a; capSlot = slot; }
+                }
+            }
+
+            float by = 66f + n * rowH + 8f;
+            if (Btn(new Rect(4, by, 360, 40), "Restablecer controles")) { GameInput.ResetDefaults(); capturing = false; }
+            GUI.Label(new Rect(4, by + 50, w - 8, 130),
+                "Fijas: Esc = pausa, Enter / E = confirmar.\n" +
+                "Mando: stick izq. mover, stick der. cámara, A saltar, X espada, LT escudo, RT varita, Y arco, B bomba, " +
+                "LB interactuar, RB fijar, clic stick izq. esquivar, clic stick der. cambiar cámara, " +
+                "cruz abajo pareja, arriba mapa grande, izquierda minimapa, Select inventario, Start pausa.", panelLbl);
+            GUI.EndScrollView();
         }
 
         public static void ApplyCameraSpeed()
@@ -327,30 +431,28 @@ namespace Hearthbound
             if (r != null) r.TurnSpeed = 110f * CameraSpeed;
         }
 
-        void DrawControls(float W, float H)
+        /// <summary>Procesa la captura de tecla al reasignar (antes de dibujar, para que el clic no se pierda).</summary>
+        void HandleCapture()
         {
-            Rect p = new Rect(30, 40, 640, 500);
-            Fill(new Rect(p.x - 4, p.y - 4, p.width + 8, p.height + 8), new Color(0.95f, 0.78f, 0.4f, 0.9f));
-            Fill(p, new Color(0.17f, 0.13f, 0.20f, 0.92f));
-            GUI.Label(new Rect(p.x + 20, p.y + 12, 500, 40), "Controles", lbl);
-            GUI.Label(new Rect(p.x + 20, p.y + 56, 600, 400),
-                "TECLADO Y RATÓN\n" +
-                "WASD  mover\n" +
-                "Flechas  girar la cámara (izq./der.) e inclinarla (arriba/abajo)\n" +
-                "Ratón: mantener botón central y arrastrar = girar cámara; rueda = zoom\n" +
-                "V  cambiar cámara (aérea / sobre el hombro)\n" +
-                "J o clic izquierdo  espada (combo de 3 golpes)\n" +
-                "K o clic derecho  escudo (parry si bloqueas justo antes del golpe)\n" +
-                "Espacio  esquivar        Tab  fijar / soltar enemigo\n" +
-                "F (mantener)  arco: apuntar; soltar para disparar\n" +
-                "R  varita de fuego (gasta maná; quema enredaderas)\n" +
-                "B  lanzar bomba        E  interactuar\n" +
-                "C  ordenar a tu pareja        M  tamaño del minimapa        Esc  pausa\n\n" +
-                "MANDO\n" +
-                "Stick izq. mover, stick der. cámara, X espada, LT escudo, A esquivar,\n" +
-                "RB fijar, Y arco, RT varita, B bomba, LB interactuar, clic del stick der. cámara,\n" +
-                "Cruz abajo pareja, Cruz arriba minimapa, Start pausa", panelLbl);
-            if (Btn(new Rect(p.x + 20, p.yMax - 66, 520, 46), "Volver")) screen = fromPause ? Screen_.Main : Screen_.Main;
+            if (!capturing) return;
+            Event e = Event.current;
+            if (e == null) return;
+            if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape) { capturing = false; e.Use(); return; }
+            if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Delete || e.keyCode == KeyCode.Backspace))
+            {
+                GameInput.Set(capAct, capSlot, KeyCode.None);
+                capturing = false;
+                e.Use();
+                return;
+            }
+            KeyCode kc;
+            if (GameInput.TryCapture(e, out kc))
+            {
+                GameInput.Set(capAct, capSlot, kc);
+                Sfx.Play("ui", 1.3f);
+                capturing = false;
+                e.Use();
+            }
         }
 
         void DrawPause(float W, float H)
@@ -370,11 +472,12 @@ namespace Hearthbound
 
         void DrawOptionsInPause(float W, float H)
         {
-            Rect p = new Rect(W * 0.5f - 260, 170, 520, 440);
+            Rect p = new Rect(W * 0.5f - 390, 40, 780, 620);
             Fill(new Rect(p.x - 4, p.y - 4, p.width + 8, p.height + 8), new Color(0.95f, 0.78f, 0.4f, 0.9f));
-            Fill(p, new Color(0.17f, 0.13f, 0.20f, 0.95f));
+            Fill(p, new Color(0.17f, 0.13f, 0.20f, 0.97f));
+            GUI.Label(new Rect(p.x + 20, p.y + 10, 480, 40), "Opciones", lbl);
             DrawOptionsBody(p);
-            if (Btn(new Rect(p.x + 20, p.yMax - 66, 480, 46), "Volver")) screen = Screen_.Main;
+            if (Btn(new Rect(p.x + 20, p.yMax - 62, 740, 46), "Volver")) { capturing = false; screen = Screen_.Main; }
         }
 
         void DrawEnd(float W, float H)
@@ -384,7 +487,7 @@ namespace Hearthbound
             GUI.Label(new Rect(W * 0.5f - 300, 190, 600, 200),
                 "Conseguiste la armadura de nivel 2, aprendiste a usar espada, escudo, arco y bombas, " +
                 "y protegiste a tu pareja de los slimes.\n\n" +
-                "La varita que encontraste abrirá el hielo y el fuego en la próxima ruina.", panelLbl);
+                "Tu varita de fuego ya quema enredaderas; en la próxima ruina descubrirás el hielo y nuevas magias.", panelLbl);
             float x = W * 0.5f - 160f, y = H * 0.62f;
             if (Btn(new Rect(x, y, 320, 54), "Jugar de nuevo")) StartGame();
             if (Btn(new Rect(x, y + 68, 320, 54), "Menú principal")) ExitToMenu();

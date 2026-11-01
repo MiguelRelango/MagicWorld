@@ -23,23 +23,43 @@ Funciona con el *Input System* nuevo y con el Input Manager clásico.
 
 ## Controles
 
+Todas las teclas de teclado y ratón se pueden cambiar en **Opciones → Controles** (dos asignaciones por acción).
+Valores por defecto:
+
 | Acción | Teclado y ratón | Mando |
 | --- | --- | --- |
 | Mover | WASD | Stick izquierdo |
 | Cámara (girar) | Flechas, o mantener botón central del ratón y arrastrar (derecho si se activa en Opciones) | Stick derecho |
 | Zoom de cámara | Rueda del ratón | — |
-| Cambiar cámara (aérea / sobre el hombro) | V | Clic stick derecho |
-| Varita de fuego (gasta maná) | R | RT |
-| Tamaño del minimapa | M | Cruz arriba |
+| Cambiar cámara (aérea / hombro) | V | Clic stick derecho |
+| Saltar (bajo, ~0,7 m) | Espacio | A |
+| Esquivar | Shift izquierdo | Clic stick izquierdo |
 | Espada (combo de 3) | J o clic izquierdo | X |
 | Escudo / parry | K o clic derecho | LT |
-| Esquivar | Espacio | A |
 | Fijar enemigo | Tab | RB |
 | Arco (mantener y soltar) | F | Y |
 | Bomba | B | B |
+| Varita de fuego (gasta maná) | R | RT |
 | Interactuar | E | LB |
 | Ordenar a la pareja | C | Cruz abajo |
+| Mapa grande | M | Cruz arriba |
+| Tamaño del minimapa | N | Cruz izquierda |
+| Inventario | I | Select |
+| Panel de modo dev | F1 (solo con el modo dev activado) | — |
 | Pausa | Esc | Start |
+
+## Opciones
+
+- **General:** volumen y modo desarrollador.
+- **Cámara:** cámara actual, velocidad de giro, sensibilidad del ratón, suavizado del seguimiento, inversión de ejes, botón de giro y restablecer.
+- **Controles:** reasignar cada acción (clic en la casilla, pulsa la tecla; Esc cancela, Supr borra).
+
+## Mapa, inventario y modo dev
+
+- **M** abre el mapa grande (arrastrar para mover, rueda para zoom, orientado al norte). Muestra el terreno cargado alrededor de ti.
+- **I** abre el inventario: equipo, materiales, descripción con tus teclas actuales y elección de armadura desbloqueada.
+- **Modo dev** (Opciones → General): **F1** abre un panel con trucos (invulnerable, maná y munición infinitos, dar todo, curar, eliminar enemigos, armadura 1-4),
+  aparición de objetos delante de ti (slimes, recogibles, enredaderas, cofres, rocas y muros agrietados, bombas, destello) y teletransportes.
 
 ## Guía del prólogo
 

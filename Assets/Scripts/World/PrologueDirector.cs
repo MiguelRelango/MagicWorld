@@ -75,6 +75,7 @@ namespace Hearthbound
             Game.Arrows = 20;
             Game.Bombs = 6;
             Game.ArmorLevel = 2;
+            Game.ArmorMax = 2;
 
             IslandWorld.Build(seed);
             IslandMode = true;
@@ -101,6 +102,7 @@ namespace Hearthbound
             for (int i = 0; i < loose.Length; i++) Destroy(loose[i].gameObject);
             PrologueWorld.Clear();
             IslandWorld.Clear();
+            if (Panels.Instance != null) Panels.Instance.ClearSpawned();
             IslandMode = false;
             if (player != null) Destroy(player.gameObject);
             if (partner != null) Destroy(partner.gameObject);
@@ -172,6 +174,19 @@ namespace Hearthbound
         public void RefreshModel()
         {
             if (model != null) model.Build(Game.Look, Game.ArmorLevel, Game.HasSword, Game.HasShield, Game.HasBow);
+        }
+
+        public Vector3 Checkpoint { get { return checkpoint; } }
+
+        /// <summary>Equipa un nivel de armadura (1..4) y ajusta la vida máxima. Con unlock lo desbloquea (modo dev).</summary>
+        public void SetArmor(int level, bool unlock)
+        {
+            level = Mathf.Clamp(level, 1, 4);
+            if (unlock) Game.ArmorMax = Mathf.Max(Game.ArmorMax, level);
+            if (level > Game.ArmorMax) return;
+            Game.ArmorLevel = level;
+            ApplyArmorStats(false);
+            RefreshModel();
         }
 
         void ApplyArmorStats(bool full)
@@ -328,6 +343,7 @@ namespace Hearthbound
             if (benchUsed) return;
             benchUsed = true;
             Game.ArmorLevel = 2;
+            Game.ArmorMax = Mathf.Max(Game.ArmorMax, 2);
             ApplyArmorStats(true);
             RefreshModel();
             Sfx.Play("heal");
@@ -489,9 +505,9 @@ namespace Hearthbound
 
         public string CurrentHint()
         {
-            if (IslandMode) return "B: bomba   R: varita de fuego (quema enredaderas)   V: cambiar cámara   M: tamaño del minimapa   C: pareja";
+            if (IslandMode) return "B: bomba   R: varita de fuego   Espacio: saltar   I: inventario   M: mapa grande   V: cámara   C: pareja";
             if (!gearTaken) return "";
-            if (!gardenDone) return "J: atacar   K: escudo (parry justo al golpe)   Tab: fijar   Espacio: esquivar";
+            if (!gardenDone) return "J: atacar   K: escudo (parry justo al golpe)   Tab: fijar   Shift: esquivar   Espacio: saltar   I: inventario";
             if (bowGiven && !bellRung) return "Mantén F para apuntar, suelta para disparar";
             if (Game.HasBombs && !wallBroken) return "B: lanzar bomba (ten distancia: te hace daño)";
             return "C: ordenar a tu pareja";

@@ -5,7 +5,8 @@ namespace Hearthbound
     /// <summary>
     /// Minimapa cuadrado. Una cámara ortográfica cenital renderiza a una textura y el HUD la dibuja
     /// en la esquina superior derecha. Gira con la cámara del juego (arriba = hacia donde miras).
-    /// Tecla M (o cruz arriba del mando) cambia el tamaño de la zona visible.
+    /// Tecla N (o cruz izquierda del mando) cambia el tamaño de la zona visible.
+    /// El mapa grande (tecla M) usa una segunda cámara que se renderiza a mano mientras el panel está abierto.
     /// </summary>
     public class Minimap : MonoBehaviour
     {
@@ -20,6 +21,13 @@ namespace Hearthbound
         CameraRig mainRig;
         float yaw;
         float half = 38f;
+
+        // Mapa grande (panel de pantalla completa)
+        Camera bigCam;
+        RenderTexture bigRt;
+        public Vector3 BigCenter;
+        public float BigHalf = 70f;
+        const float BigMin = 24f, BigMax = 130f;
 
         void Awake()
         {
@@ -50,6 +58,7 @@ namespace Hearthbound
 
         void OnDestroy()
         {
+            if (bigRt != null) { bigRt.Release(); Destroy(bigRt); }
             if (rt != null) { rt.Release(); Destroy(rt); }
             if (Instance == this) Instance = null;
         }
@@ -60,7 +69,7 @@ namespace Hearthbound
             cam.enabled = playing;
             if (!playing) return;
 
-            if (GameInput.Pressed(Act.Map))
+            if (GameInput.Pressed(Act.MapSize))
             {
                 sizeIdx = (sizeIdx + 1) % HalfSizes.Length;
                 Sfx.Play("ui", 1.1f, 0.5f);
@@ -89,12 +98,17 @@ namespace Hearthbound
         /// <summary>Posición en el recuadro (0..w, 0..h) de un punto del mundo.</summary>
         Vector2 ToMap(Vector3 world, Vector3 center, float w)
         {
-            float rad = yaw * Mathf.Deg2Rad;
+            return ToMap(world, center, w, yaw, half);
+        }
+
+        static Vector2 ToMap(Vector3 world, Vector3 center, float w, float yw, float hf)
+        {
+            float rad = yw * Mathf.Deg2Rad;
             float c = Mathf.Cos(rad), s = Mathf.Sin(rad);
             float dx = world.x - center.x, dz = world.z - center.z;
             float mx = dx * c - dz * s;
             float my = dx * s + dz * c;
-            return new Vector2(w * 0.5f + mx / (2f * half) * w, w * 0.5f - my / (2f * half) * w);
+            return new Vector2(w * 0.5f + mx / (2f * hf) * w, w * 0.5f - my / (2f * hf) * w);
         }
 
         void Dot(Vector2 p, float size, Color c, float w)
@@ -103,9 +117,70 @@ namespace Hearthbound
             Fill(new Rect(p.x - size * 0.5f, p.y - size * 0.5f, size, size), c);
         }
 
+        GUIStyle northStyle, smallStyle;
+
+        void EnsureStyles()
+        {
+            if (northStyle != null) return;
+            northStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            northStyle.normal.textColor = Color.white;
+            smallStyle = new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            smallStyle.normal.textColor = Color.white;
+        }
+
+        static bool IsChest(Interactable it)
+        {
+            return it.Enabled && it.Prompt != null && it.Prompt.IndexOf("cofre", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>Puntos de interés y jugador sobre un recuadro de lado w (se llama dentro de un GUI.BeginGroup).</summary>
+        void DrawMarkers(Vector3 center, float w, float yw, float hf, float k)
+        {
+            Vector3 pc = Game.Player.transform.position;
+
+            for (int i = 0; i < Refuge.All.Count; i++)
+                Dot(ToMap(Refuge.All[i].transform.position, center, w, yw, hf), 7f * k, new Color(0.45f, 0.95f, 0.65f), w);
+            for (int i = 0; i < Interactable.All.Count; i++)
+            {
+                Interactable it = Interactable.All[i];
+                if (!IsChest(it)) continue;
+                Dot(ToMap(it.transform.position, center, w, yw, hf), 7f * k, new Color(1f, 0.85f, 0.25f), w);
+            }
+            for (int i = 0; i < Lockable.All.Count; i++)
+            {
+                if (!Lockable.All[i].IsEnemy) continue;
+                Dot(ToMap(Lockable.All[i].transform.position, center, w, yw, hf), 6f * k, new Color(0.95f, 0.25f, 0.25f), w);
+            }
+            if (Game.Partner != null)
+                Dot(ToMap(Game.Partner.transform.position, center, w, yw, hf), 8f * k, new Color(1f, 0.55f, 0.72f), w);
+
+            // Jugador: rombo blanco con punta amarilla hacia donde mira
+            Vector2 pp = ToMap(pc, center, w, yw, hf);
+            if (pp.x > 4f && pp.y > 4f && pp.x < w - 4f && pp.y < w - 4f)
+            {
+                float ang = Game.Player.transform.eulerAngles.y - yw;
+                Matrix4x4 old = GUI.matrix;
+                GUIUtility.RotateAroundPivot(ang, pp);
+                Fill(new Rect(pp.x - 5f * k, pp.y - 5f * k, 10f * k, 10f * k), Color.white);
+                Fill(new Rect(pp.x - 2f * k, pp.y - 11f * k, 4f * k, 7f * k), new Color(1f, 0.85f, 0.2f));
+                GUI.matrix = old;
+            }
+        }
+
+        void DrawNorth(float w, float yw)
+        {
+            float rad = yw * Mathf.Deg2Rad;
+            Vector2 n = new Vector2(-Mathf.Sin(rad), -Mathf.Cos(rad));   // hacia el norte en pantalla (y crece hacia abajo)
+            Vector2 np = new Vector2(w * 0.5f, w * 0.5f) + n * (w * 0.5f - 12f);
+            Fill(new Rect(np.x - 8, np.y - 8, 16, 16), new Color(0f, 0f, 0f, 0.6f));
+            GUI.Label(new Rect(np.x - 8, np.y - 8, 16, 16), "N", northStyle);
+        }
+
         public void Draw(Rect r)
         {
             if (Game.Player == null || rt == null) return;
+            if (Event.current != null && Event.current.type != EventType.Repaint) return;
+            EnsureStyles();
             float w = r.width;
 
             // Marco
@@ -114,47 +189,102 @@ namespace Hearthbound
 
             GUI.BeginGroup(r);
             GUI.DrawTexture(new Rect(0, 0, w, w), rt, ScaleMode.StretchToFill, false);
-
-            Vector3 center = Game.Player.transform.position;
-
-            // Refugios y cofres
-            for (int i = 0; i < Refuge.All.Count; i++)
-                Dot(ToMap(Refuge.All[i].transform.position, center, w), 7f, new Color(0.45f, 0.95f, 0.65f), w);
-            for (int i = 0; i < Interactable.All.Count; i++)
-            {
-                Interactable it = Interactable.All[i];
-                if (!it.Enabled || it.Prompt == null || !it.Prompt.ToLower().Contains("cofre")) continue;
-                Dot(ToMap(it.transform.position, center, w), 7f, new Color(1f, 0.85f, 0.25f), w);
-            }
-            // Enemigos
-            for (int i = 0; i < Lockable.All.Count; i++)
-            {
-                if (!Lockable.All[i].IsEnemy) continue;
-                Dot(ToMap(Lockable.All[i].transform.position, center, w), 6f, new Color(0.95f, 0.25f, 0.25f), w);
-            }
-            // Pareja
-            if (Game.Partner != null)
-                Dot(ToMap(Game.Partner.transform.position, center, w), 8f, new Color(1f, 0.55f, 0.72f), w);
-
-            // Jugador: rombo blanco con punta amarilla hacia donde mira
-            Vector2 pp = ToMap(center, center, w);
-            float ang = Game.Player.transform.eulerAngles.y - yaw;
-            Matrix4x4 old = GUI.matrix;
-            GUIUtility.RotateAroundPivot(ang, pp);
-            Fill(new Rect(pp.x - 5f, pp.y - 5f, 10f, 10f), Color.white);
-            Fill(new Rect(pp.x - 2f, pp.y - 11f, 4f, 7f), new Color(1f, 0.85f, 0.2f));
-            GUI.matrix = old;
-
-            // Norte
-            float rad = yaw * Mathf.Deg2Rad;
-            Vector2 n = new Vector2(-Mathf.Sin(rad), -Mathf.Cos(rad));   // hacia el norte en pantalla (y crece hacia abajo)
-            Vector2 np = new Vector2(w * 0.5f, w * 0.5f) + n * (w * 0.5f - 12f);
-            Fill(new Rect(np.x - 8, np.y - 8, 16, 16), new Color(0f, 0f, 0f, 0.6f));
-            GUIStyle st = new GUIStyle(GUI.skin.label) { fontSize = 12, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            st.normal.textColor = Color.white;
-            GUI.Label(new Rect(np.x - 8, np.y - 8, 16, 16), "N", st);
-
+            DrawMarkers(Game.Player.transform.position, w, yaw, half, 1f);
+            DrawNorth(w, yaw);
             GUI.EndGroup();
+        }
+
+        // ---------- Mapa grande (tecla M) ----------
+
+        public void OpenLarge()
+        {
+            if (Game.Player == null) return;
+            BigCenter = Game.Player.transform.position;
+            BigHalf = 70f;
+        }
+
+        void EnsureBig()
+        {
+            if (bigCam != null) return;
+            bigRt = new RenderTexture(1024, 1024, 16, RenderTextureFormat.ARGB32);
+            bigRt.name = "BigMapRT";
+            bigRt.filterMode = FilterMode.Bilinear;
+
+            GameObject go = new GameObject("BigMapCamera");
+            go.transform.SetParent(transform, false);
+            bigCam = go.AddComponent<Camera>();
+            bigCam.orthographic = true;
+            bigCam.targetTexture = bigRt;
+            bigCam.clearFlags = CameraClearFlags.SolidColor;
+            bigCam.backgroundColor = new Color(0.20f, 0.36f, 0.52f);
+            bigCam.nearClipPlane = 1f;
+            bigCam.farClipPlane = 700f;
+            bigCam.depth = -11f;
+            bigCam.allowHDR = false;
+            bigCam.allowMSAA = false;
+            bigCam.useOcclusionCulling = false;
+            bigCam.enabled = false;
+        }
+
+        /// <summary>Renderiza el mapa grande (sin niebla). Se llama cada fotograma mientras el panel está abierto.</summary>
+        public void RenderLarge()
+        {
+            if (Game.Player == null) return;
+            EnsureBig();
+            bigCam.orthographicSize = BigHalf;
+            bigCam.transform.position = new Vector3(BigCenter.x, Game.Player.transform.position.y + 220f, BigCenter.z);
+            bigCam.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            bool fog = RenderSettings.fog;
+            RenderSettings.fog = false;
+            bigCam.Render();
+            RenderSettings.fog = fog;
+        }
+
+        /// <summary>Dibuja el mapa grande, orientado al norte; arrastrar mueve, la rueda hace zoom.</summary>
+        public void DrawLarge(Rect r)
+        {
+            if (Game.Player == null || bigRt == null) return;
+            EnsureStyles();
+            Event e = Event.current;
+            float w = r.width;
+
+            if (e != null && r.Contains(e.mousePosition))
+            {
+                if (e.type == EventType.MouseDrag && e.button == 0)
+                {
+                    float k = 2f * BigHalf / w;
+                    BigCenter += new Vector3(-e.delta.x * k, 0f, e.delta.y * k);
+                    e.Use();
+                }
+                else if (e.type == EventType.ScrollWheel)
+                {
+                    BigHalf = Mathf.Clamp(BigHalf * (1f + e.delta.y * 0.08f), BigMin, BigMax);
+                    e.Use();
+                }
+            }
+
+            if (e == null || e.type != EventType.Repaint) return;
+
+            Fill(new Rect(r.x - 5, r.y - 5, r.width + 10, r.height + 10), new Color(0.95f, 0.78f, 0.4f, 1f));
+            Fill(new Rect(r.x - 1, r.y - 1, r.width + 2, r.height + 2), new Color(0.12f, 0.10f, 0.14f, 1f));
+            GUI.BeginGroup(r);
+            GUI.DrawTexture(new Rect(0, 0, w, w), bigRt, ScaleMode.StretchToFill, false);
+            DrawMarkers(BigCenter, w, 0f, BigHalf, 1.5f);
+            DrawNorth(w, 0f);
+            GUI.EndGroup();
+        }
+
+        /// <summary>Leyenda de colores para el panel del mapa.</summary>
+        public void DrawLegend(float x, float y)
+        {
+            EnsureStyles();
+            string[] names = { "Tú", "Pareja", "Enemigo", "Cofre", "Refugio" };
+            Color[] cols = { Color.white, new Color(1f, 0.55f, 0.72f), new Color(0.95f, 0.25f, 0.25f), new Color(1f, 0.85f, 0.25f), new Color(0.45f, 0.95f, 0.65f) };
+            for (int i = 0; i < names.Length; i++)
+            {
+                Fill(new Rect(x, y + i * 26f + 5f, 14f, 14f), cols[i]);
+                GUI.Label(new Rect(x + 22f, y + i * 26f, 140f, 24f), names[i], smallStyle);
+            }
         }
     }
 }

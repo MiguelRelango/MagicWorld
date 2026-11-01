@@ -4,6 +4,9 @@ namespace Hearthbound
 {
     public enum GameState { Menu, Playing, Paused, Ended }
 
+    /// <summary>Panel a pantalla completa abierto (el juego queda en pausa mientras está abierto).</summary>
+    public enum UiPanel { None, Map, Inventory, Dev }
+
     /// <summary>Estado global simple del prólogo.</summary>
     public static class Game
     {
@@ -20,6 +23,10 @@ namespace Hearthbound
         public static int Bombs, Arrows, ArmorLevel = 1;
         public static int Wood, Gems, Kills;
         public static int PauseFrame = -1;
+        public static UiPanel Panel = UiPanel.None;
+        public static int ArmorMax = 1;
+        // Opciones del modo dev (se desactivan al empezar partida nueva)
+        public static bool GodMode, InfMana, InfAmmo;
         public static float Mana = 100f, MaxMana = 100f;
         public static float FlashUntil, FlashDuration = 1f;
         public static string Objective = "";
@@ -41,6 +48,9 @@ namespace Hearthbound
             Kills = 0;
             Mana = MaxMana;
             FlashUntil = 0f;
+            Panel = UiPanel.None;
+            ArmorMax = 1;
+            GodMode = InfMana = InfAmmo = false;
             Objective = "";
             Toast = "";
             ToastUntil = 0f;
