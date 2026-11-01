@@ -47,7 +47,7 @@ namespace Hearthbound
         bool IncomingBlocked(Vector3 from)
         {
             if (Game.GodMode) return true;              // modo dev: invulnerable
-            if (Pc != null && Pc.Dodging) return true; // invulnerable durante la esquiva
+            if (Pc != null && Pc.RollInvulnerable) return true; // ventana de invulnerabilidad de la voltereta
             if (!Blocking || !Game.HasShield) return false;
             Vector3 to = Nav.Flat(from - transform.position);
             if (Vector3.Angle(transform.forward, to) > 80f) return false;

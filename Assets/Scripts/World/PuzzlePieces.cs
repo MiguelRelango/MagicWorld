@@ -18,9 +18,9 @@ namespace Hearthbound
             GameObject go = new GameObject("CrackedWall");
             go.transform.SetParent(parent, false);
             go.transform.position = pos;
-            Prim.Box(go.transform, Vector3.zero, size, stone, true, "Wall");
+            WorldLook.Surface(Prim.Box(go.transform, Vector3.zero, size, stone, true, "Wall"), "Rock", 2f);
             // Grietas luminosas (señal visual consistente del puzle).
-            Color crack = new Color(1f, 0.55f, 0.2f);
+            Color crack = new Color(1f, 0.72f, 0.25f);
             // Se dibujan en las dos caras que se ven al acercarse (±X).
             for (int side = -1; side <= 1; side += 2)
             {
@@ -29,6 +29,7 @@ namespace Hearthbound
                 Prim.Make(PrimitiveType.Cube, go.transform, new Vector3(x, 0.5f, 0.3f), new Vector3(0.04f, 0.1f, 0.5f), crack, false, "Crack2", true);
                 Prim.Make(PrimitiveType.Cube, go.transform, new Vector3(x, -0.2f, -0.3f), new Vector3(0.04f, 0.1f, 0.5f), crack, false, "Crack3", true);
             }
+            WorldLook.CrackLight(go.transform);
             return go.AddComponent<BreakableWall>();
         }
 
@@ -45,6 +46,7 @@ namespace Hearthbound
             {
                 GameObject r = Prim.Box(null, transform.position + new Vector3(UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(0f, 1.5f), UnityEngine.Random.Range(-0.5f, 0.5f)),
                     Vector3.one * UnityEngine.Random.Range(0.2f, 0.45f), new Color(0.50f, 0.48f, 0.46f), true, "Rubble");
+                WorldLook.Surface(r, "Rock", 0.5f);
                 Rigidbody rb = r.AddComponent<Rigidbody>();
                 rb.AddExplosionForce(6f, transform.position, 3f, 0.8f, ForceMode.Impulse);
                 Destroy(r, 4f);
@@ -199,12 +201,17 @@ namespace Hearthbound
             go.transform.SetParent(parent, false);
             go.transform.position = pos;
             go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-            Prim.Box(go.transform, new Vector3(0f, 0.3f, 0f), new Vector3(1.1f, 0.6f, 0.7f), new Color(0.55f, 0.36f, 0.2f), true, "Box");
+            WorldLook.ChestBody(go.transform);
             GameObject lidPivot = new GameObject("LidPivot");
             lidPivot.transform.SetParent(go.transform, false);
             lidPivot.transform.localPosition = new Vector3(0f, 0.6f, -0.35f);
-            Prim.Box(lidPivot.transform, new Vector3(0f, 0.12f, 0.35f), new Vector3(1.14f, 0.24f, 0.74f), new Color(0.62f, 0.42f, 0.24f), false, "Lid");
+            WorldLook.Surface(Prim.Box(lidPivot.transform, new Vector3(0f, 0.12f, 0.35f), new Vector3(1.14f, 0.24f, 0.74f), new Color(0.62f, 0.42f, 0.24f), false, "Lid"), "ChestWood", 1.2f);
             Prim.Box(go.transform, new Vector3(0f, 0.52f, 0.36f), new Vector3(0.16f, 0.2f, 0.06f), new Color(0.95f, 0.8f, 0.3f), false, "Lock");
+            // Dark keyhole on the front of the golden lock plate.
+            Prim.Ball(go.transform, new Vector3(0f, 0.55f, 0.394f), new Vector3(0.052f, 0.052f, 0.008f), new Color(0.025f, 0.02f, 0.015f), false, "KeyholeRound");
+            Prim.Box(go.transform, new Vector3(0f, 0.515f, 0.394f), new Vector3(0.024f, 0.055f, 0.008f), new Color(0.025f, 0.02f, 0.015f), false, "KeyholeSlot");
+            Prim.Box(lidPivot.transform, new Vector3(0f, -0.007f, 0.35f), new Vector3(0.96f, 0.012f, 0.56f), new Color(0.045f, 0.03f, 0.02f), false, "LidInside");
+            WorldLook.ChestBands(go.transform, lidPivot.transform);
             Chest c = go.AddComponent<Chest>();
             c.lid = lidPivot.transform;
             Interactable it = go.AddComponent<Interactable>();

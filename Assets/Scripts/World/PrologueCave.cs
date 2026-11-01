@@ -20,8 +20,8 @@ namespace Hearthbound
         // Bloque de roca sólido entre (x1,z1) y (x2,z2), de profundidad -8 a altura 3.4.
         static void Fill(Transform p, float x1, float z1, float x2, float z2, Color c)
         {
-            Prim.Box(p, new Vector3((x1 + x2) * 0.5f, -2.3f, (z1 + z2) * 0.5f),
-                new Vector3(x2 - x1, 11.4f, z2 - z1), c, true, "Rock");
+            WorldLook.Surface(Prim.Box(p, new Vector3((x1 + x2) * 0.5f, -2.3f, (z1 + z2) * 0.5f),
+                new Vector3(x2 - x1, 11.4f, z2 - z1), c, true, "Rock"), "Rock", 4f);
         }
 
         static void BuildCave(PrologueDirector dir)

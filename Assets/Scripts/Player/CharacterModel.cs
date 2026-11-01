@@ -17,6 +17,7 @@ namespace Hearthbound
         Transform body;
         Transform bobRoot;
         float bob;
+        Vector3 modelScale = Vector3.one;
 
         public void Build(CharacterLook look, int armorLevel, bool showSword, bool showShield, bool showBow)
         {
@@ -24,7 +25,8 @@ namespace Hearthbound
             GameObject r = new GameObject("Model");
             root = r.transform;
             root.SetParent(transform, false);
-            root.localScale = look.BodyScale;
+            modelScale = look.BodyScale;
+            root.localScale = modelScale;
 
             GameObject b = new GameObject("Body");
             body = b.transform;
@@ -149,8 +151,38 @@ namespace Hearthbound
                 .GetComponent<Renderer>().sharedMaterial = Prim.Mat(new Color(0.5f, 0.85f, 1f), true);
         }
 
+        public void ResetRoll()
+        {
+            if (root == null) return;
+            root.localPosition = Vector3.zero;
+            root.localRotation = Quaternion.identity;
+            root.localScale = modelScale;
+        }
+
+        public void AnimateRoll(float progress, Vector3 localDirection)
+        {
+            if (root == null) return;
+            progress = Mathf.Clamp01(progress);
+            localDirection.y = 0f;
+            if (localDirection.sqrMagnitude < 0.001f) localDirection = Vector3.forward;
+            Vector3 axis = Vector3.Cross(Vector3.up, localDirection.normalized);
+            Quaternion rotation = Quaternion.AngleAxis(360f * progress, axis);
+            float tuck = Mathf.Sin(progress * Mathf.PI);
+            Vector3 scale = Vector3.Scale(modelScale, new Vector3(1f - 0.15f * tuck, 1f - 0.30f * tuck, 1f - 0.15f * tuck));
+            Vector3 pivot = Vector3.Scale(new Vector3(0f, 0.95f, 0f), scale);
+            // Rotate around the torso, keeping the visual body above the floor.
+            float support = Mathf.Abs((rotation * Vector3.right).y) * 0.5f * scale.x
+                + Mathf.Abs((rotation * Vector3.up).y) * 0.95f * scale.y
+                + Mathf.Abs((rotation * Vector3.forward).y) * 0.4f * scale.z;
+            root.localScale = scale;
+            root.localRotation = rotation;
+            root.localPosition = Vector3.up * support - rotation * pivot;
+            if (bobRoot != null) { bobRoot.localPosition = Vector3.zero; bobRoot.localRotation = Quaternion.identity; }
+        }
+
         public void Animate(float speed01, float dt)
         {
+            ResetRoll();
             if (bobRoot == null) return;
             bob += dt * (3f + speed01 * 9f);
             float y = Mathf.Abs(Mathf.Sin(bob)) * 0.06f * speed01;

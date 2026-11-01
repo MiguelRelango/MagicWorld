@@ -5,21 +5,22 @@ Este repositorio contiene el **prólogo** descrito en el GDD (casa, aldea, prime
 bombas y la cueva con el puzle de muros agrietados) y un **mundo abierto en una isla procedural**
 que se genera por trozos mientras avanzas, como Minecraft.
 
-Todo el mundo, los personajes y los efectos se generan **por código con primitivas**:
-no hay prefabs, modelos ni audio que importar.
+El mundo y los personajes se generan por código. El repositorio incluye texturas pintadas,
+follaje, flores y rocas procedurales, además de shaders URP para mezclar el terreno y animar el mar.
 
 ## Cómo probarlo
 
-1. En Unity Hub crea un proyecto **3D** (Unity 6, plantilla *Universal 3D* o *3D (Built-In)*).
-2. Copia la carpeta `Assets/` de este repositorio dentro de la carpeta `Assets/` de tu proyecto.
+1. En Unity Hub crea un proyecto **3D** (Unity 6, plantilla **Universal 3D (URP)**; versión usada: **6000.3.15f1**).
+2. Copia el **contenido** de `Assets/` de este repositorio dentro de `Assets/` de tu proyecto, conservando los archivos `.meta`.
 3. Espera a que Unity compile. Pulsa **Play** en cualquier escena: el juego se inicia solo.
 4. Opcional: menú **Hearthbound → Crear escena del prólogo** guarda una escena lista,
    y **Hearthbound → Comprobar configuración** muestra el pipeline y el sistema de input.
 
 Funciona con el *Input System* nuevo y con el Input Manager clásico.
 
-> Sin compilador de Unity en el entorno donde se escribió, el código se revisó a mano.
-> Si Unity muestra algún error de compilación al importar, copia el mensaje y se corrige.
+> Los scripts C# se comprobaron con el compilador y las bibliotecas de Unity 6000.3.15f1.
+> Los shaders nuevos, el resultado visual y las mecánicas requieren comprobación en Play y en una build.
+> Este repositorio contiene assets para importar; no incluye `Library/`, un ejecutable ni el proyecto completo de Unity.
 
 ## Controles
 
@@ -33,7 +34,8 @@ Valores por defecto:
 | Zoom de cámara | Rueda del ratón | — |
 | Cambiar cámara (aérea / hombro) | V | Clic stick derecho |
 | Saltar (bajo, ~0,7 m) | Espacio | A |
-| Esquivar | Shift izquierdo | Clic stick izquierdo |
+| Voltereta direccional | Ctrl izquierdo o derecho + WASD | Clic stick izquierdo + dirección |
+| Correr (mantener) | Shift izquierdo o derecho | — |
 | Espada (combo de 3) | J o clic izquierdo | X |
 | Escudo / parry | K o clic derecho | LT |
 | Fijar enemigo | Tab | RB |
@@ -113,3 +115,17 @@ de la casa (prólogo) y en cofres de la isla; el fuego se contagia entre matas. 
 
 Pendiente: archipiélago y barco, ciclo día/noche, multijugador cooperativo, libros de magia, hielo,
 niveles de armadura 3 y 4 en juego, guardado de partida.
+
+## Actualización visual y movimiento
+
+- Bosque con corteza, hojas recortadas, hierba con volumen y enredaderas quemables.
+- Flores con pétalos, rocas angulares, slimes brillantes y translúcidos.
+- Ruinas de piedra; cofres de madera con bandas oscuras, cerradura y cavidad interior.
+- Arena, mar animado y mezclas graduales entre arena, pasto, roca y nieve en la isla.
+- Carrera mantenida y voltereta con dirección relativa a la cámara. Sin dirección, rueda hacia delante.
+- La primera carga migra Shift/Ctrl a los controles nuevos; después siguen siendo reasignables.
+
+Los archivos principales de apariencia son `ForestLook.cs`, `WorldLook.cs`, `IslandSurfaces.cs`
+y `Assets/Resources/ForestLook/`. Los controles están en `GameInput.cs`; carrera y voltereta
+en `PlayerController.cs` y `CharacterModel.cs`. Para trabajar en paralelo, actualizar desde GitHub
+antes de editar y usar ramas separadas cuando se cambien los mismos archivos.

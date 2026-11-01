@@ -72,13 +72,13 @@ namespace Hearthbound
             for (int i = 0; i < 10; i++)
             {
                 if (!Spot(rng, ox, oz, 1.3f, 9f, 0.6f, 6f, out p)) continue;
-                Prim.Ball(chunk, p + Vector3.up * 0.12f, Vector3.one * 0.18f, FlowerColors[rng.Next(FlowerColors.Length)], false, "Flower");
+                WorldLook.Flower(chunk, p, FlowerColors[rng.Next(FlowerColors.Length)]);
             }
             for (int i = 0; i < 3; i++)
             {
                 if (!Spot(rng, ox, oz, 0.4f, 14f, 0.8f, 6f, out p)) continue;
                 float s = 0.5f + (float)rng.NextDouble() * 0.7f;
-                Prim.Ball(chunk, p + Vector3.up * (0.12f * s), new Vector3(s, s * 0.6f, s * 0.9f), new Color(0.58f, 0.56f, 0.55f), false, "Pebble");
+                WorldLook.Rock(chunk, p + Vector3.up * (0.17f * s), new Vector3(s, s * 0.7f, s * 0.9f), Mathf.RoundToInt(p.x * 13f + p.z * 31f));
             }
 
             // Boulder con grietas: se rompe con bombas y suelta botín.
@@ -192,16 +192,16 @@ namespace Hearthbound
             }
             if (!ok) return;
 
-            Prim.Cyl(chunk, c + Vector3.up * -0.1f, new Vector3(15f, 0.5f, 15f), StoneDark, false, "RuinFloor");
+            WorldLook.Surface(Prim.Cyl(chunk, c + Vector3.up * -0.1f, new Vector3(15f, 0.5f, 15f), StoneDark, false, "RuinFloor"), "Masonry", 3f);
             for (int k = 0; k < 8; k++)
             {
                 float a = k * Mathf.PI * 0.25f;
                 float height = (k % 3 == 0) ? 1.4f : 3.2f + (float)rng.NextDouble() * 1.8f;   // algunas rotas
                 Vector3 pp = c + new Vector3(Mathf.Cos(a) * 6.2f, height * 0.5f + 0.1f, Mathf.Sin(a) * 6.2f);
-                Prim.Box(chunk, pp, new Vector3(1.1f, height, 1.1f), StoneLight, true, "Pillar");
-                if (k % 3 != 0) Prim.Box(chunk, pp + Vector3.up * (height * 0.5f + 0.15f), new Vector3(1.4f, 0.3f, 1.4f), StoneDark, false, "Capital");
+                WorldLook.Surface(Prim.Box(chunk, pp, new Vector3(1.1f, height, 1.1f), StoneLight, true, "Pillar"), "Masonry", 2f);
+                if (k % 3 != 0) WorldLook.Surface(Prim.Box(chunk, pp + Vector3.up * (height * 0.5f + 0.15f), new Vector3(1.4f, 0.3f, 1.4f), StoneDark, false, "Capital"), "Masonry", 2f);
             }
-            Prim.Box(chunk, c + new Vector3(0f, 0.35f, 0f), new Vector3(2.6f, 0.5f, 2.6f), StoneLight, true, "Altar");
+            WorldLook.Surface(Prim.Box(chunk, c + new Vector3(0f, 0.35f, 0f), new Vector3(2.6f, 0.5f, 2.6f), StoneLight, true, "Altar"), "Masonry", 2f);
 
             if (done) return;
 

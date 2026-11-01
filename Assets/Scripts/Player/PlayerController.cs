@@ -10,9 +10,10 @@ namespace Hearthbound
     public class PlayerController : MonoBehaviour
     {
         public float WalkSpeed = 5.2f;
-        public float DodgeSpeed = 11f;
-        public float DodgeTime = 0.28f;
-        public float DodgeCooldown = 0.45f;
+        public float RunSpeed = 8.2f;
+        public float DodgeSpeed = 8.0f;
+        public float DodgeTime = 0.48f;
+        public float DodgeCooldown = 0.65f;
         public float Gravity = -24f;
         /// <summary>Salto bajo (~0.75 m): sirve para cruzar desniveles pequeños, no para escalar.</summary>
         public float JumpSpeed = 6.0f;
@@ -24,6 +25,7 @@ namespace Hearthbound
 
         public Lockable LockTarget { get; private set; }
         public bool Dodging { get { return dodgeLeft > 0f; } }
+        public bool RollInvulnerable { get { float elapsed = DodgeTime - dodgeLeft; return Dodging && elapsed >= 0.04f && elapsed < 0.32f; } }
         public bool Locked { get { return LockTarget != null; } }
         public Vector3 Facing { get { return transform.forward; } }
 
@@ -56,7 +58,7 @@ namespace Hearthbound
         void Update()
         {
             if (Game.State != GameState.Playing) return;
-            if (Hp != null && Hp.Dead) return;
+            if (Hp != null && Hp.Dead) { dodgeLeft = 0f; if (Model != null) Model.ResetRoll(); return; }
 
             HandleLock();
 
@@ -70,25 +72,28 @@ namespace Hearthbound
             bool busy = Combat != null && Combat.MovementLocked;
             Vector3 move = Vector3.zero;
 
-            if (GameInput.Pressed(Act.Dodge) && Time.time >= dodgeReady && !busy)
+            if (GameInput.Pressed(Act.Dodge) && Time.time >= dodgeReady && !busy && !Dodging && cc.isGrounded)
             {
                 dodgeDir = input.sqrMagnitude > 0.05f ? input.normalized : transform.forward;
                 dodgeLeft = DodgeTime;
-                dodgeReady = Time.time + DodgeCooldown;
-                transform.rotation = Quaternion.LookRotation(dodgeDir);
+                dodgeReady = Time.time + Mathf.Max(DodgeCooldown, DodgeTime + 0.08f);
+                if (!Locked) transform.rotation = Quaternion.LookRotation(dodgeDir);
                 Sfx.Play("swing", 1.4f, 0.5f);
             }
 
             if (dodgeLeft > 0f)
             {
-                dodgeLeft -= Time.deltaTime;
-                move = dodgeDir * DodgeSpeed;
+                float step = Mathf.Min(dodgeLeft, Time.deltaTime);
+                dodgeLeft = Mathf.Max(0f, dodgeLeft - Time.deltaTime);
+                move = dodgeDir * DodgeSpeed * (step / Mathf.Max(Time.deltaTime, 0.00001f));
+                speedNow = 0f;
             }
             else if (!busy)
             {
-                float speed = WalkSpeed * (Combat != null ? Combat.SpeedMultiplier : 1f);
+                bool running = GameInput.Held(Act.Sprint) && input.sqrMagnitude > 0.01f;
+                float speed = (running ? RunSpeed : WalkSpeed) * (Combat != null ? Combat.SpeedMultiplier : 1f);
                 move = input * speed;
-                speedNow = input.magnitude;
+                speedNow = input.magnitude * (running ? 1.5f : 1f);
                 Face(input);
             }
             else
@@ -114,7 +119,11 @@ namespace Hearthbound
             Vector3 vel = move + knock + Vector3.up * vy;
             cc.Move(vel * Time.deltaTime);
 
-            if (Model != null) Model.Animate(Dodging ? 1f : speedNow, Time.deltaTime);
+            if (Model != null)
+            {
+                if (Dodging) Model.AnimateRoll(1f - dodgeLeft / Mathf.Max(DodgeTime, 0.01f), transform.InverseTransformDirection(dodgeDir));
+                else Model.Animate(speedNow, Time.deltaTime);
+            }
         }
 
         void Face(Vector3 input)
@@ -200,6 +209,9 @@ namespace Hearthbound
 
         public void Teleport(Vector3 pos)
         {
+            dodgeLeft = 0f;
+            knock = Vector3.zero;
+            if (Model != null) Model.ResetRoll();
             cc.enabled = false;
             transform.position = pos;
             cc.enabled = true;
