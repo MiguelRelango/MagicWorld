@@ -86,6 +86,14 @@ namespace Hearthbound
             return false;
         }
 
+        /// <summary>Escala de la interfaz. El menú principal y el creador se dibujan más pequeños (80 %) para dejar sitio al personaje.</summary>
+        float UiScale()
+        {
+            float s = Mathf.Max(0.75f, UnityEngine.Screen.height / 720f);
+            if (Game.State == GameState.Menu) s *= 0.8f;
+            return s;
+        }
+
         // ---------- Cámara del menú ----------
 
         void LateUpdate()
@@ -99,8 +107,17 @@ namespace Hearthbound
                 bool creator = screen == Screen_.Creator;
                 float dist = creator ? 4.1f : 8.5f;
                 float sway = Mathf.Sin(camT) * (creator ? 0.15f : 0.45f);
-                Vector3 target = o + new Vector3(creator ? 0.4f : 1.2f, creator ? 1.15f : 1.5f, 0f);
-                Vector3 pos = o + new Vector3(sway * dist * 0.6f + (creator ? 0f : 1f), creator ? 1.6f : 2.6f, -dist);
+                // En el creador el panel ocupa la izquierda: la cámara se desplaza para que el personaje quede
+                // centrado en la zona libre de la derecha.
+                float shift = 0f;
+                if (creator)
+                {
+                    float halfW = dist * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) * cam.aspect;
+                    float panelPx = 460f * UiScale();
+                    shift = panelPx / UnityEngine.Screen.width * halfW;
+                }
+                Vector3 target = o + new Vector3(creator ? -shift : 1.2f, creator ? 1.15f : 1.5f, 0f);
+                Vector3 pos = o + new Vector3(sway * dist * 0.6f + (creator ? -shift : 1f), creator ? 1.6f : 2.6f, -dist);
                 cam.transform.position = Vector3.Lerp(cam.transform.position, pos, 1f - Mathf.Exp(-3f * Time.unscaledDeltaTime));
                 Quaternion rot = Quaternion.LookRotation(target - cam.transform.position);
                 cam.transform.rotation = Quaternion.Slerp(cam.transform.rotation, rot, 1f - Mathf.Exp(-5f * Time.unscaledDeltaTime));
@@ -133,7 +150,7 @@ namespace Hearthbound
         void OnGUI()
         {
             Styles();
-            float s = Mathf.Max(0.75f, UnityEngine.Screen.height / 720f);
+            float s = UiScale();
             Matrix4x4 old = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
             float W = UnityEngine.Screen.width / s, H = UnityEngine.Screen.height / s;
