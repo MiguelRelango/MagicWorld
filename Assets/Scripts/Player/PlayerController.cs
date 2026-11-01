@@ -48,6 +48,19 @@ namespace Hearthbound
             cc.stepOffset = 0.35f;
         }
 
+        public void ConfigureCollision(Vector3 scale)
+        {
+            if (cc == null) cc = GetComponent<CharacterController>();
+            cc.height = 1.95f * scale.y;
+            cc.radius = 0.35f * Mathf.Max(scale.x, scale.z);
+            cc.center = new Vector3(0f, cc.height * 0.5f, 0f);
+            cc.skinWidth = 0.035f;
+            cc.stepOffset = 0.28f * scale.y;
+            cc.slopeLimit = 48f;
+            cc.minMoveDistance = 0f;
+            cc.detectCollisions = true;
+        }
+
         public void Knockback(Vector3 from, float force)
         {
             Vector3 d = Nav.Flat(transform.position - from);

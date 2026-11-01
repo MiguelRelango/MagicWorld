@@ -16,12 +16,12 @@ namespace Hearthbound
         Transform root;
         Transform body;
         Transform bobRoot;
-        float bob;
+        CharacterJoints joints;
         Vector3 modelScale = Vector3.one;
 
         public void Build(CharacterLook look, int armorLevel, bool showSword, bool showShield, bool showBow)
         {
-            if (root != null) Destroy(root.gameObject);
+            if (root != null) { root.gameObject.SetActive(false); Destroy(root.gameObject); }
             GameObject r = new GameObject("Model");
             root = r.transform;
             root.SetParent(transform, false);
@@ -98,6 +98,12 @@ namespace Hearthbound
             Prim.Box(WandPivot, new Vector3(0f, 0f, 0.22f), new Vector3(0.05f, 0.05f, 0.62f), new Color(0.45f, 0.30f, 0.18f), false, "WandStick");
             Prim.Make(PrimitiveType.Sphere, WandPivot, new Vector3(0f, 0f, 0.58f), Vector3.one * 0.14f, new Color(1f, 0.5f, 0.1f), false, "WandGem", true);
             WandPivot.gameObject.SetActive(false);
+            Transform armature = new GameObject("Armature").transform;
+            armature.SetParent(root, false);
+            joints = armature.gameObject.AddComponent<CharacterJoints>();
+            joints.Build(root, body, this, cloth, skin);
+            PlayerController controller = GetComponent<PlayerController>();
+            if (controller != null) controller.ConfigureCollision(modelScale);
         }
 
         void BuildHair(int style, Color c)
@@ -153,6 +159,7 @@ namespace Hearthbound
 
         public void ResetRoll()
         {
+            if (joints != null) joints.ClearRoll();
             if (root == null) return;
             root.localPosition = Vector3.zero;
             root.localRotation = Quaternion.identity;
@@ -163,6 +170,7 @@ namespace Hearthbound
         {
             if (root == null) return;
             progress = Mathf.Clamp01(progress);
+            if (joints != null) joints.Roll(progress);
             localDirection.y = 0f;
             if (localDirection.sqrMagnitude < 0.001f) localDirection = Vector3.forward;
             Vector3 axis = Vector3.Cross(Vector3.up, localDirection.normalized);
@@ -183,11 +191,7 @@ namespace Hearthbound
         public void Animate(float speed01, float dt)
         {
             ResetRoll();
-            if (bobRoot == null) return;
-            bob += dt * (3f + speed01 * 9f);
-            float y = Mathf.Abs(Mathf.Sin(bob)) * 0.06f * speed01;
-            bobRoot.localPosition = new Vector3(0f, y, 0f);
-            bobRoot.localRotation = Quaternion.Euler(Mathf.Sin(bob) * 4f * speed01, 0f, Mathf.Sin(bob * 0.5f) * 3f * speed01);
+            if (joints != null) joints.Motion(speed01);
         }
     }
 }

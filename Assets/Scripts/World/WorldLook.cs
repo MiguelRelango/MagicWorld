@@ -41,6 +41,7 @@ namespace Hearthbound
             go.transform.localPosition = pos; go.transform.localScale = scale;
             go.transform.localRotation = Quaternion.Euler(0, variant * 73f, 0);
             go.AddComponent<MeshFilter>().sharedMesh = rocks[variant];
+            go.AddComponent<MeshCollider>().sharedMesh = rocks[variant];
             go.AddComponent<MeshRenderer>().sharedMaterial = ForestLook.Surface("Rock");
             return go;
         }
