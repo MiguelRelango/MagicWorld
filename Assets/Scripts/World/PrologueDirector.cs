@@ -78,6 +78,7 @@ namespace Hearthbound
             Game.ArmorMax = 2;
 
             IslandWorld.Build(seed);
+            IslandMap.Begin(seed);
             IslandMode = true;
             Vector3 camp = IslandTerrain.Camp;
             checkpoint = camp + Vector3.up * 0.4f;
@@ -102,6 +103,7 @@ namespace Hearthbound
             for (int i = 0; i < loose.Length; i++) Destroy(loose[i].gameObject);
             PrologueWorld.Clear();
             IslandWorld.Clear();
+            IslandMap.End();
             if (Panels.Instance != null) Panels.Instance.ClearSpawned();
             IslandMode = false;
             if (player != null) Destroy(player.gameObject);

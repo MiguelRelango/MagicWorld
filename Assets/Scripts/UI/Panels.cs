@@ -52,6 +52,10 @@ namespace Hearthbound
             if (Instance == this) Instance = null;
         }
 
+        void OnApplicationQuit() { IslandMap.Save(); }
+
+        void OnApplicationPause(bool paused) { if (paused) IslandMap.Save(); }
+
         // ---------- Apertura y cierre ----------
 
         void Open(UiPanel p)
@@ -211,13 +215,19 @@ namespace Hearthbound
             float y = map.y + 4f;
             GUI.Label(new Rect(x, y, 280f, 30f), "Leyenda", lbl);
             if (mm != null) mm.DrawLegend(x, y + 36f);
-            y += 36f + 5f * 26f + 20f;
+            y += 36f + 5f * 26f + 10f;
 
-            GUI.Label(new Rect(x, y, 300f, 120f),
-                "Arrastra con el ratón para mover el mapa.\nRueda del ratón: acercar / alejar.\nEl mapa muestra el terreno cargado alrededor de ti.", desc);
-            y += 130f;
-            if (mm != null && Btn(new Rect(x, y, 240f, 40f), "Centrar en ti")) mm.OpenLarge();
-            if (Btn(new Rect(x, y + 50f, 240f, 40f), "Cerrar (" + Keys(Act.Map) + ")")) Close();
+            bool island = IslandMap.Active;
+            if (mm != null) GUI.Label(new Rect(x, y, 300f, 28f), "Zoom: x" + mm.ZoomFactor.ToString("0.0"), small);
+            if (island) GUI.Label(new Rect(x, y + 24f, 300f, 28f), "Descubierto: " + IslandMap.Percent.ToString("0.0") + " % de la isla", small);
+            y += 56f;
+            GUI.Label(new Rect(x, y, 310f, 150f),
+                "Arrastra con el ratón para mover el mapa.\nRueda del ratón: acercar / alejar (hasta x50).\n" +
+                (island ? "Solo se dibuja lo que has recorrido; se guarda para esta semilla." : "Muestra el terreno de la zona."), desc);
+            y += 150f;
+            if (mm != null && Btn(new Rect(x, y, 260f, 40f), "Centrar en ti")) mm.OpenLarge();
+            if (mm != null && Btn(new Rect(x, y + 48f, 260f, 40f), island ? "Ver toda la isla" : "Ver todo")) mm.ShowAll();
+            if (Btn(new Rect(x, y + 96f, 260f, 40f), "Cerrar (" + Keys(Act.Map) + ")")) Close();
         }
 
         // ---------- Inventario ----------
@@ -594,6 +604,8 @@ namespace Hearthbound
                 if (GUILayout.Button("Campamento", btn, GUILayout.Height(32f))) Teleport(IslandTerrain.Camp + Vector3.up * 0.4f);
                 if (GUILayout.Button("Cima de la montaña", btn, GUILayout.Height(32f))) Teleport(new Vector3(0f, IslandTerrain.Height(0f, 0f) + 0.6f, 0f));
                 if (GUILayout.Button("Costa norte", btn, GUILayout.Height(32f))) { Vector3 q = new Vector3(0f, 0f, 150f); q.y = IslandTerrain.Height(q.x, q.z) + 0.6f; Teleport(q); }
+                if (GUILayout.Button("Revelar todo el mapa", btn, GUILayout.Height(32f))) { IslandMap.RevealAll(); devMsg = "Mapa revelado"; }
+                if (GUILayout.Button("Olvidar el mapa", btn, GUILayout.Height(32f))) { IslandMap.Forget(); devMsg = "Mapa borrado"; }
             }
             if (director != null && GUILayout.Button("Punto seguro", btn, GUILayout.Height(32f))) Teleport(director.Checkpoint);
             if (Game.Partner != null && GUILayout.Button("Pareja a mi lado", btn, GUILayout.Height(32f)))

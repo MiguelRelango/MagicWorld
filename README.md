@@ -56,7 +56,8 @@ Valores por defecto:
 
 ## Mapa, inventario y modo dev
 
-- **M** abre el mapa grande (arrastrar para mover, rueda para zoom, orientado al norte). Muestra el terreno cargado alrededor de ti.
+- **M** abre el mapa grande (arrastrar para mover, rueda para zoom de hasta x50, orientado al norte). En la isla el mapa se va
+  descubriendo a medida que exploras (radio ~55 m), se guarda en disco por semilla y «Ver toda la isla» muestra el límite completo.
 - **I** abre el inventario: equipo, materiales, descripción con tus teclas actuales y elección de armadura desbloqueada.
 - **Modo dev** (Opciones → General): **F1** abre un panel con trucos (invulnerable, maná y munición infinitos, dar todo, curar, eliminar enemigos, armadura 1-4),
   aparición de objetos delante de ti (slimes, recogibles, enredaderas, cofres, rocas y muros agrietados, bombas, destello) y teletransportes.
