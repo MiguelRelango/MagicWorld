@@ -52,6 +52,7 @@ namespace Hearthbound
             s.visual = v.transform;
             Prim.Ball(s.visual, new Vector3(0f, 0.40f * scale, 0f), new Vector3(0.9f, 0.75f, 0.9f) * scale, s.baseColor, false, "Gel");
             s.rend = s.visual.GetChild(0).GetComponent<Renderer>();
+            s.rend.sharedMaterial = WorldLook.Gel(s.baseColor);
             Prim.Ball(s.visual, new Vector3(-0.17f * scale, 0.5f * scale, 0.34f * scale), Vector3.one * 0.11f * scale, new Color(0.08f, 0.1f, 0.1f), false, "EyeL");
             Prim.Ball(s.visual, new Vector3(0.17f * scale, 0.5f * scale, 0.34f * scale), Vector3.one * 0.11f * scale, new Color(0.08f, 0.1f, 0.1f), false, "EyeR");
 
@@ -131,11 +132,11 @@ namespace Hearthbound
             if (hurtFlash > 0f)
             {
                 hurtFlash -= Time.deltaTime;
-                rend.sharedMaterial = Prim.Mat(Color.white);
+                rend.sharedMaterial = WorldLook.Gel(Color.white);
             }
             else
             {
-                rend.sharedMaterial = Prim.Mat(state == State.Stunned ? new Color(0.7f, 0.7f, 0.95f) : baseColor);
+                rend.sharedMaterial = WorldLook.Gel(state == State.Stunned ? new Color(0.7f, 0.7f, 0.95f) : baseColor);
             }
 
             if (cc.isGrounded && vy < 0f) vy = -2f;
@@ -168,7 +169,7 @@ namespace Hearthbound
                 case State.Windup:
                     // Se agacha y brilla: aviso para esquivar o parar.
                     visual.localScale = new Vector3(1.15f, 0.65f, 1.15f);
-                    rend.sharedMaterial = Prim.Mat(Mathf.Sin(Time.time * 40f) > 0f ? new Color(1f, 0.55f, 0.35f) : baseColor);
+                    rend.sharedMaterial = WorldLook.Gel(Mathf.Sin(Time.time * 40f) > 0f ? new Color(1f, 0.55f, 0.35f) : baseColor);
                     if (target != null)
                     {
                         Vector3 look = Nav.Flat(target.position - transform.position);

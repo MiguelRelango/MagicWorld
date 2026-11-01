@@ -13,7 +13,7 @@ namespace Hearthbound
         Attack, Block, Dodge, Jump, Lock, Bow, Bomb, Wand, Axe, Plant, Build, Interact, Partner,
         CameraMode, Map, MapSize, Inventory, Dev,
         MoveForward, MoveBack, MoveLeft, MoveRight, CamLeft, CamRight, CamUp, CamDown,
-        Pause, Confirm
+        Pause, Confirm, Sprint
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ namespace Hearthbound
         {
             Act.MoveForward, Act.MoveBack, Act.MoveLeft, Act.MoveRight,
             Act.CamLeft, Act.CamRight, Act.CamUp, Act.CamDown,
-            Act.Attack, Act.Block, Act.Dodge, Act.Jump, Act.Lock, Act.Bow, Act.Bomb, Act.Wand, Act.Axe, Act.Plant, Act.Build,
+            Act.Attack, Act.Block, Act.Dodge, Act.Sprint, Act.Jump, Act.Lock, Act.Bow, Act.Bomb, Act.Wand, Act.Axe, Act.Plant, Act.Build,
             Act.Interact, Act.Partner, Act.CameraMode, Act.Map, Act.MapSize, Act.Inventory, Act.Dev
         };
 
@@ -44,7 +44,8 @@ namespace Hearthbound
             Dictionary<Act, KeyCode[]> d = new Dictionary<Act, KeyCode[]>();
             d[Act.Attack] = new[] { KeyCode.J, KeyCode.Mouse0 };
             d[Act.Block] = new[] { KeyCode.K, KeyCode.Mouse1 };
-            d[Act.Dodge] = new[] { KeyCode.LeftShift, KeyCode.None };
+            d[Act.Dodge] = new[] { KeyCode.LeftControl, KeyCode.RightControl };
+            d[Act.Sprint] = new[] { KeyCode.LeftShift, KeyCode.RightShift };
             d[Act.Jump] = new[] { KeyCode.Space, KeyCode.None };
             d[Act.Lock] = new[] { KeyCode.Tab, KeyCode.None };
             d[Act.Bow] = new[] { KeyCode.F, KeyCode.None };
@@ -116,6 +117,15 @@ namespace Hearthbound
                     string key = "bind_" + Rebindable[i] + "_" + j;
                     if (PlayerPrefs.HasKey(key)) binds[Rebindable[i]][j] = (KeyCode)PlayerPrefs.GetInt(key);
                 }
+            if (PlayerPrefs.GetInt("controls_sprint_roll_v1", 0) == 0)
+            {
+                Set(Act.Dodge, 0, KeyCode.LeftControl);
+                Set(Act.Dodge, 1, KeyCode.RightControl);
+                Set(Act.Sprint, 0, KeyCode.LeftShift);
+                Set(Act.Sprint, 1, KeyCode.RightShift);
+                PlayerPrefs.SetInt("controls_sprint_roll_v1", 1);
+                Save();
+            }
         }
 
         static void Save()
@@ -140,7 +150,8 @@ namespace Hearthbound
                 case Act.CamDown: return "Cámara abajo";
                 case Act.Attack: return "Espada";
                 case Act.Block: return "Escudo / parry";
-                case Act.Dodge: return "Esquivar";
+                case Act.Dodge: return "Voltereta";
+                case Act.Sprint: return "Correr (mantener)";
                 case Act.Jump: return "Saltar";
                 case Act.Lock: return "Fijar enemigo";
                 case Act.Bow: return "Arco";

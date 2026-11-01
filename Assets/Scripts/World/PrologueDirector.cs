@@ -376,7 +376,7 @@ namespace Hearthbound
             if (Game.State != GameState.Playing || player == null) return;
 
             // Pausa
-            if (GameInput.Pressed(Act.Pause))
+            if (Time.frameCount > Game.PauseFrame && GameInput.Pressed(Act.Pause))
             {
                 Game.State = GameState.Paused;
                 Game.PauseFrame = Time.frameCount;
@@ -447,6 +447,7 @@ namespace Hearthbound
 
         void HandleInteraction()
         {
+            if (CraftingSystem.IsWorking) return;
             if (!GameInput.Pressed(Act.Interact) && !GameInput.Pressed(Act.Confirm)) return;
             Interactable it = Interactable.Nearest(player.transform.position);
             if (it != null && it.OnUse != null)

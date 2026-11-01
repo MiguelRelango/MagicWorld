@@ -121,9 +121,9 @@ namespace Hearthbound
             GameObject v = new GameObject("Visual");
             v.transform.SetParent(t.transform, false);
             n.vis = v.transform;
-            Prim.Cyl(n.vis, new Vector3(0f, 1.1f * scale, 0f), new Vector3(0.55f, 1.1f, 0.55f) * scale, new Color(0.50f, 0.34f, 0.22f), true, "Trunk");
-            Prim.Ball(n.vis, new Vector3(0f, 3.1f * scale, 0f), new Vector3(3.0f, 2.6f, 3.0f) * scale, new Color(0.36f, 0.66f, 0.34f), false, "Leaves");
-            Prim.Ball(n.vis, new Vector3(0.7f * scale, 2.5f * scale, 0.4f * scale), new Vector3(2.0f, 1.8f, 2.0f) * scale, new Color(0.42f, 0.72f, 0.38f), false, "Leaves2");
+            Prim.Cyl(n.vis, new Vector3(0f, 1.1f * scale, 0f), new Vector3(0.55f, 1.1f, 0.55f) * scale, new Color(0.50f, 0.34f, 0.22f), true, "Trunk")
+                .GetComponent<Renderer>().sharedMaterial = ForestLook.Surface("Bark");
+            ForestLook.Canopy(n.vis, scale);
 
             TreeRecord r = forced != null ? forced : TreeRegistry.Get(n.Id);
             if (r != null)

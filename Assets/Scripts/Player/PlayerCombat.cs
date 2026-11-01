@@ -50,7 +50,7 @@ namespace Hearthbound
         bool IncomingBlocked(Vector3 from)
         {
             if (Game.GodMode) return true;              // modo dev: invulnerable
-            if (Pc != null && Pc.Dodging) return true; // invulnerable durante la esquiva
+            if (Pc != null && Pc.RollInvulnerable) return true; // ventana de invulnerabilidad de la voltereta
             if (!Blocking || !Game.HasShield) return false;
             Vector3 to = Nav.Flat(from - transform.position);
             if (Vector3.Angle(transform.forward, to) > 80f) return false;
@@ -83,6 +83,14 @@ namespace Hearthbound
         {
             if (Game.State != GameState.Playing || Hp.Dead) return;
 
+            if (CraftingSystem.IsWorking)
+            {
+                Blocking = false; Aiming = false;
+                if (Model != null)
+                    foreach (Transform item in new[] {Model.SwordPivot, Model.ShieldPivot, Model.BowPivot, Model.WandPivot, Model.AxePivot})
+                        if (item != null) item.gameObject.SetActive(false);
+                return;
+            }
             float dt = Time.deltaTime;
             if (attackLeft > 0f) attackLeft -= dt;
             if (recover > 0f) recover -= dt;
@@ -380,12 +388,12 @@ namespace Hearthbound
                 float sign = (ComboStep % 2 == 1) ? 1f : -1f;
                 float angle = attackLeft > 0f ? Mathf.Lerp(-80f * sign, 90f * sign, t) : 0f;
                 Model.SwordPivot.localRotation = Quaternion.Euler(attackLeft > 0f ? 0f : 70f, angle, attackLeft > 0f ? 0f : 0f);
-                Model.SwordPivot.localPosition = attackLeft > 0f ? new Vector3(0.1f, 0.85f, 0.35f) : new Vector3(0.45f, 0.62f, 0.10f);
+                Model.SwordPivot.localPosition = attackLeft > 0f ? new Vector3(0f, 0.04f, 0.12f) : new Vector3(0.03f, 0.04f, 0.10f);
             }
             if (Model.ShieldPivot != null)
             {
                 Model.ShieldPivot.gameObject.SetActive(Game.HasShield);
-                Vector3 target = Blocking ? new Vector3(-0.15f, 0.95f, 0.55f) : new Vector3(-0.50f, 0.85f, 0.18f);
+                Vector3 target = Blocking ? new Vector3(0f, 0.12f, 0.22f) : new Vector3(-0.08f, 0.16f, 0.18f);
                 Model.ShieldPivot.localPosition = Vector3.Lerp(Model.ShieldPivot.localPosition, target, 1f - Mathf.Exp(-18f * dt));
                 Quaternion rot = Blocking ? Quaternion.identity : Quaternion.Euler(0f, 70f, 0f);
                 Model.ShieldPivot.localRotation = Quaternion.Slerp(Model.ShieldPivot.localRotation, rot, 1f - Mathf.Exp(-18f * dt));
@@ -405,7 +413,7 @@ namespace Hearthbound
             if (Model.BowPivot != null)
             {
                 Model.BowPivot.gameObject.SetActive(Game.HasBow && Aiming);
-                Model.BowPivot.localPosition = new Vector3(-0.15f, 0.95f, 0.45f);
+                Model.BowPivot.localPosition = new Vector3(0f, 0.12f, 0.18f);
             }
         }
 

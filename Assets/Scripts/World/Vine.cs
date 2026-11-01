@@ -57,13 +57,14 @@ namespace Hearthbound
                 float h = (0.9f + (float)rng.NextDouble() * 0.9f) * scale;
                 GameObject stem = Prim.Cyl(go.transform, new Vector3(x, h * 0.5f, ((float)rng.NextDouble() - 0.5f) * 0.4f),
                     new Vector3(0.09f * scale, h * 0.5f, 0.09f * scale), Green, false, "Stem");
+                stem.GetComponent<Renderer>().sharedMaterial = ForestLook.Surface("Bark");
                 stem.transform.localRotation = Quaternion.Euler(((float)rng.NextDouble() - 0.5f) * 35f, 0f, ((float)rng.NextDouble() - 0.5f) * 40f);
             }
             for (int i = 0; i < 12; i++)
             {
                 Vector3 lp = new Vector3(((float)rng.NextDouble() - 0.5f) * 1.5f, 0.2f + (float)rng.NextDouble() * 1.4f, ((float)rng.NextDouble() - 0.5f) * 0.6f) * scale;
                 float ls = (0.22f + (float)rng.NextDouble() * 0.16f) * scale;
-                Prim.Ball(go.transform, lp, new Vector3(ls * 1.3f, ls * 0.6f, ls), Leaf, false, "Leaf");
+                ForestLook.Leaf(go.transform, lp, ls * 2.5f, (float)rng.NextDouble() * 360f);
             }
 
             BoxCollider col = go.AddComponent<BoxCollider>();
@@ -120,7 +121,8 @@ namespace Hearthbound
                 {
                     if (renders[i] == null) continue;
                     string n = renders[i].name;
-                    if (n == "Stem" || n == "Leaf") renders[i].sharedMaterial = m;
+                    if (n == "Stem") renders[i].sharedMaterial = m;
+                    else if (n == "Leaf") renders[i].sharedMaterial = ForestLook.Surface("Leaves", true, true);
                 }
                 renders = null;
             }

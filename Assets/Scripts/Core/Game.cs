@@ -5,7 +5,7 @@ namespace Hearthbound
     public enum GameState { Menu, Playing, Paused, Ended }
 
     /// <summary>Panel a pantalla completa abierto (el juego queda en pausa mientras está abierto).</summary>
-    public enum UiPanel { None, Map, Inventory, Dev }
+    public enum UiPanel { None, Map, Inventory, Dev, Crafting }
 
     /// <summary>Estado global simple del prólogo.</summary>
     public static class Game

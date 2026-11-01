@@ -86,6 +86,7 @@ namespace Hearthbound
 
         void Update()
         {
+            if (Game.Panel == UiPanel.Crafting || CraftingSystem.IsWorking) return;
             if (Game.State == GameState.Menu || Game.State == GameState.Ended)
             {
                 Game.Panel = UiPanel.None;
@@ -110,6 +111,7 @@ namespace Hearthbound
 
         void LateUpdate()
         {
+            if (Game.Panel == UiPanel.Crafting || CraftingSystem.IsWorking) return;
             if (Game.State != GameState.Paused || Game.Panel == UiPanel.None) return;
             // Esc cierra (en LateUpdate para que el director no lo tome como "pausa" en el mismo fotograma).
             if (Time.frameCount > Game.PauseFrame && GameInput.Pressed(Act.Pause)) { Close(); return; }
@@ -183,6 +185,7 @@ namespace Hearthbound
 
         void OnGUI()
         {
+            if (Game.Panel == UiPanel.Crafting) return;
             if (Game.State != GameState.Paused || Game.Panel == UiPanel.None) return;
             Styles();
             GUI.depth = -100;

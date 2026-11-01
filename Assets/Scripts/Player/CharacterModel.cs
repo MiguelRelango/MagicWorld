@@ -17,15 +17,17 @@ namespace Hearthbound
         Transform root;
         Transform body;
         Transform bobRoot;
-        float bob;
+        CharacterJoints joints;
+        Vector3 modelScale = Vector3.one;
 
         public void Build(CharacterLook look, int armorLevel, bool showSword, bool showShield, bool showBow)
         {
-            if (root != null) Destroy(root.gameObject);
+            if (root != null) { root.gameObject.SetActive(false); Destroy(root.gameObject); }
             GameObject r = new GameObject("Model");
             root = r.transform;
             root.SetParent(transform, false);
-            root.localScale = look.BodyScale;
+            modelScale = look.BodyScale;
+            root.localScale = modelScale;
 
             GameObject b = new GameObject("Body");
             body = b.transform;
@@ -106,6 +108,13 @@ namespace Hearthbound
             Prim.Box(AxePivot, new Vector3(0f, 0f, 0.32f), new Vector3(0.06f, 0.06f, 0.78f), new Color(0.52f, 0.34f, 0.20f), false, "AxeHandle");
             Prim.Box(AxePivot, new Vector3(0f, 0.10f, 0.62f), new Vector3(0.06f, 0.26f, 0.26f), new Color(0.72f, 0.75f, 0.80f), false, "AxeHead");
             AxePivot.gameObject.SetActive(false);
+
+            Transform armature = new GameObject("Armature").transform;
+            armature.SetParent(root, false);
+            joints = armature.gameObject.AddComponent<CharacterJoints>();
+            joints.Build(root, body, this, cloth, skin);
+            PlayerController controller = GetComponent<PlayerController>();
+            if (controller != null) controller.ConfigureCollision(modelScale);
         }
 
         void BuildHair(int style, Color c)
@@ -159,13 +168,41 @@ namespace Hearthbound
                 .GetComponent<Renderer>().sharedMaterial = Prim.Mat(new Color(0.5f, 0.85f, 1f), true);
         }
 
+        public void ResetRoll()
+        {
+            if (joints != null) joints.ClearRoll();
+            if (root == null) return;
+            root.localPosition = Vector3.zero;
+            root.localRotation = Quaternion.identity;
+            root.localScale = modelScale;
+        }
+
+        public void AnimateRoll(float progress, Vector3 localDirection)
+        {
+            if (root == null) return;
+            progress = Mathf.Clamp01(progress);
+            if (joints != null) joints.Roll(progress);
+            localDirection.y = 0f;
+            if (localDirection.sqrMagnitude < 0.001f) localDirection = Vector3.forward;
+            Vector3 axis = Vector3.Cross(Vector3.up, localDirection.normalized);
+            Quaternion rotation = Quaternion.AngleAxis(360f * progress, axis);
+            float tuck = Mathf.Sin(progress * Mathf.PI);
+            Vector3 scale = Vector3.Scale(modelScale, new Vector3(1f - 0.15f * tuck, 1f - 0.30f * tuck, 1f - 0.15f * tuck));
+            Vector3 pivot = Vector3.Scale(new Vector3(0f, 0.95f, 0f), scale);
+            // Rotate around the torso, keeping the visual body above the floor.
+            float support = Mathf.Abs((rotation * Vector3.right).y) * 0.5f * scale.x
+                + Mathf.Abs((rotation * Vector3.up).y) * 0.95f * scale.y
+                + Mathf.Abs((rotation * Vector3.forward).y) * 0.4f * scale.z;
+            root.localScale = scale;
+            root.localRotation = rotation;
+            root.localPosition = Vector3.up * support - rotation * pivot;
+            if (bobRoot != null) { bobRoot.localPosition = Vector3.zero; bobRoot.localRotation = Quaternion.identity; }
+        }
+
         public void Animate(float speed01, float dt)
         {
-            if (bobRoot == null) return;
-            bob += dt * (3f + speed01 * 9f);
-            float y = Mathf.Abs(Mathf.Sin(bob)) * 0.06f * speed01;
-            bobRoot.localPosition = new Vector3(0f, y, 0f);
-            bobRoot.localRotation = Quaternion.Euler(Mathf.Sin(bob) * 4f * speed01, 0f, Mathf.Sin(bob * 0.5f) * 3f * speed01);
+            ResetRoll();
+            if (joints != null) joints.Motion(speed01);
         }
     }
 }

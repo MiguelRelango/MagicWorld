@@ -38,6 +38,7 @@ namespace Hearthbound
             BuildBell(dir);
             BuildScenery();
             BuildVineChest();
+            CraftingSystem.Bench(Root, new Vector3(8f, 0f, -7f));
             BuildCave(dir);
         }
 
@@ -81,7 +82,7 @@ namespace Hearthbound
         static void BuildGround()
         {
             // Terreno de la aldea (termina donde empieza la cueva).
-            Prim.Box(Root, new Vector3(-4.5f, -0.5f, 10f), new Vector3(81f, 1f, 100f), Grass, true, "Ground");
+            ForestLook.Ground(Prim.Box(Root, new Vector3(-4.5f, -0.5f, 10f), new Vector3(81f, 1f, 100f), Grass, true, "Ground"));
             // Camino de tierra: casa -> aldea y aldea -> cueva.
             Prim.Box(Root, new Vector3(0f, 0.02f, 16f), new Vector3(3.2f, 0.05f, 24f), Dirt, false, "PathNorth");
             Prim.Box(Root, new Vector3(18f, 0.02f, 29f), new Vector3(36f, 0.05f, 3.2f), Dirt, false, "PathEast");
@@ -279,6 +280,15 @@ namespace Hearthbound
                 Tree(s, new Vector3(x, 0f, z), 0.8f + (float)rng.NextDouble() * 0.7f);
             }
 
+            ForestLook.GrassPatch(s, 864, -44f, -39f, 78f, 98f, 14000,
+                (x, z) => 0f,
+                (x, z) => !Near(x, z, 0f, 0f, 11f) && !Near(x, z, GardenCenter.x, GardenCenter.z, 13f)
+                    && !Near(x, z, BellPos.x, BellPos.z, 6f) && !Near(x, z, -13f, 24f, 8f)
+                    && !Near(x, z, 13f, 22f, 8f) && !Near(x, z, -6f, 38f, 8f)
+                    && !Near(x, z, -12f, 6f, 14f) && !Near(x, z, 13f, 1f, 4f)
+                    && !(Mathf.Abs(x) < 2.5f && z > 3f && z < 29f)
+                    && !(x > -2f && z > 26f && z < 32f));
+
             // Flores
             Color[] fc = { new Color(1f, 0.85f, 0.35f), new Color(0.95f, 0.50f, 0.65f), new Color(0.80f, 0.60f, 0.95f), Color.white };
             for (int i = 0; i < 80; i++)
@@ -286,7 +296,7 @@ namespace Hearthbound
                 float x = Mathf.Lerp(-30f, 30f, (float)rng.NextDouble());
                 float z = Mathf.Lerp(-12f, 45f, (float)rng.NextDouble());
                 if (Near(x, z, 0f, 0f, 9f) || Near(x, z, GardenCenter.x, GardenCenter.z, 10f)) continue;
-                Prim.Ball(s, new Vector3(x, 0.12f, z), Vector3.one * 0.18f, fc[rng.Next(fc.Length)], false, "Flower");
+                WorldLook.Flower(s, new Vector3(x, 0f, z), fc[rng.Next(fc.Length)]);
             }
         }
 

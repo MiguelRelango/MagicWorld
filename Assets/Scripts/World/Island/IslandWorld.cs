@@ -72,6 +72,8 @@ namespace Hearthbound
 
             sea = Prim.Box(Root, new Vector3(0f, -0.35f, 0f), new Vector3(700f, 0.2f, 700f), new Color(0.28f, 0.62f, 0.86f), false, "Sea").transform;
 
+            sea.GetComponent<Renderer>().sharedMaterial = IslandSurfaces.Water();
+
             Vector3 camp = IslandTerrain.Camp;
             lastSafe = camp + Vector3.up * 0.2f;
             Vector2Int c = ChunkOf(camp);
@@ -86,12 +88,7 @@ namespace Hearthbound
 
         static void BuildMaterials()
         {
-            mats = new Material[5];
-            mats[0] = Prim.Mat(new Color(0.60f, 0.54f, 0.42f));   // fondo marino
-            mats[1] = Prim.Mat(new Color(0.94f, 0.85f, 0.60f));   // arena
-            mats[2] = Prim.Mat(new Color(0.50f, 0.76f, 0.35f));   // hierba
-            mats[3] = Prim.Mat(new Color(0.56f, 0.54f, 0.53f));   // roca
-            mats[4] = Prim.Mat(new Color(0.95f, 0.96f, 1.00f));   // nieve
+            mats = new[] { IslandSurfaces.Terrain() };
         }
 
         static void BuildLighting()
@@ -260,6 +257,7 @@ namespace Hearthbound
             int V = N + 1;
             Vector3[] verts = new Vector3[V * V];
             Vector3[] norms = new Vector3[V * V];
+            Vector2[] uv = new Vector2[V * V];
             for (int i = 0; i < V; i++)
             {
                 for (int j = 0; j < V; j++)
@@ -268,24 +266,18 @@ namespace Hearthbound
                     verts[k] = new Vector3(ox + i, hg[i + 1, j + 1], oz + j);
                     Vector3 n = new Vector3(hg[i, j + 1] - hg[i + 2, j + 1], 2f, hg[i + 1, j] - hg[i + 1, j + 2]);
                     norms[k] = n.normalized;
+                    uv[k] = new Vector2((ox + i) / 8f, (oz + j) / 8f);
                 }
             }
 
-            List<int>[] tris = new List<int>[5];
-            for (int s = 0; s < 5; s++) tris[s] = new List<int>(N * N * 6 / 3);
+            List<int> tris = new List<int>(N * N * 6);
 
             for (int i = 0; i < N; i++)
             {
                 for (int j = 0; j < N; j++)
                 {
-                    float a = hg[i + 1, j + 1], b = hg[i + 1, j + 2], c = hg[i + 2, j + 2], d = hg[i + 2, j + 1];
-                    float avg = (a + b + c + d) * 0.25f;
-                    float mx = Mathf.Max(Mathf.Max(a, b), Mathf.Max(c, d));
-                    float mn = Mathf.Min(Mathf.Min(a, b), Mathf.Min(c, d));
-                    int s = Biome(avg, mx - mn);
-
                     int ia = i * V + j, ib = i * V + j + 1, ic = (i + 1) * V + j + 1, id2 = (i + 1) * V + j;
-                    List<int> t = tris[s];
+                    List<int> t = tris;
                     t.Add(ia); t.Add(ib); t.Add(ic);
                     t.Add(ia); t.Add(ic); t.Add(id2);
                 }
@@ -295,8 +287,8 @@ namespace Hearthbound
             mesh.name = "Chunk " + id.x + "," + id.y;
             mesh.vertices = verts;
             mesh.normals = norms;
-            mesh.subMeshCount = 5;
-            for (int s = 0; s < 5; s++) mesh.SetTriangles(tris[s], s);
+            mesh.uv = uv;
+            mesh.SetTriangles(tris, 0);
             mesh.RecalculateBounds();
 
             GameObject go = new GameObject("Chunk " + id.x + "," + id.y);
@@ -309,16 +301,12 @@ namespace Hearthbound
             ch.Go = go;
 
             IslandProps.Populate(go.transform, id.x, id.y);
+            ForestLook.GrassPatch(go.transform, IslandTerrain.Seed ^ (ox * 73856093) ^ (oz * 19349663),
+                ox, oz, N, N, 1200, IslandTerrain.Height,
+                (x, z) => IslandTerrain.Height(x, z) > 1.5f && IslandTerrain.Height(x, z) < 10.5f
+                    && IslandTerrain.Slope(x, z) < 0.45f
+                    && (new Vector2(x - IslandTerrain.Camp.x, z - IslandTerrain.Camp.z)).sqrMagnitude > 100f);
         }
 
-        static int Biome(float avg, float steep)
-        {
-            if (avg < -0.15f) return 0;      // fondo marino
-            if (steep > 0.75f) return 3;     // acantilado
-            if (avg > 21f) return 4;         // nieve
-            if (avg > 11f) return 3;         // roca de altura
-            if (avg < 1.1f) return 1;        // playa
-            return 2;                        // hierba
-        }
     }
 }
