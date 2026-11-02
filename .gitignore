@@ -3,6 +3,9 @@
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
+# Assets/Scripts/World/Build contiene código del juego (sistema de construcción), no salidas de compilación
+!Assets/Scripts/World/Build/
+!Assets/Scripts/World/Build/**
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
 .vs/
