@@ -100,6 +100,16 @@ con tu pareja y exploras:
 
 Código: `Assets/Scripts/World/Island/` (terreno, chunks y contenido).
 
+## Pueblo, gremio y misiones
+
+En la isla hay un pueblo (punto naranja en el minimapa y el mapa) con plaza, pozo, casas, vecinos con pistas y el **gremio**. Dentro del gremio:
+
+- **Tablón de misiones** (E): tres misiones, solo una activa a la vez. *Rescate en la cripta* y *Plaga de goblins* te dan el **emblema del gremio**; *Leña para el gremio* (15 de madera) no.
+- **Maestra del gremio** (E): entrega la misión terminada y paga la recompensa.
+- La cueva de la montaña **no se abre sin el emblema**: sin él, la roca sigue sellada y se avisa en pantalla.
+- La misión activa aparece como objetivo en el HUD. Código: `World/Quests.cs` (estado y recompensas), `World/Village.cs` (pueblo y gremio) y el panel en `UI/Panels.cs`.
+- Modo dev (F1, Viaje): ir al pueblo, reiniciar misiones y recibir el emblema.
+
 ## Mazmorras
 
 En la montaña de la isla hay entradas a mazmorras (se ven como un punto morado en el minimapa y el mapa grande, una vez descubiertas).

@@ -78,6 +78,13 @@ namespace Hearthbound
             Sfx.Play("ui", 0.9f, 0.6f);
         }
 
+        /// <summary>Abre el tablón de misiones del gremio.</summary>
+        public void OpenQuests()
+        {
+            if (Game.State != GameState.Playing) return;
+            Open(UiPanel.Quests);
+        }
+
         public void ClearSpawned()
         {
             if (spawnRoot != null) Destroy(spawnRoot.gameObject);
@@ -205,8 +212,47 @@ namespace Hearthbound
                 case UiPanel.Map: DrawMap(W, H); break;
                 case UiPanel.Inventory: DrawInventory(W, H); break;
                 case UiPanel.Dev: DrawDev(W, H); break;
+                case UiPanel.Quests: DrawQuests(W, H); break;
             }
             GUI.matrix = old;
+        }
+
+        // ---------- Tablón de misiones ----------
+
+        void DrawQuests(float W, float H)
+        {
+            Rect p = new Rect((W - 920f) * 0.5f, (H - 600f) * 0.5f, 920f, 600f);
+            Frame(p);
+            GUI.Label(new Rect(p.x + 24f, p.y + 12f, 760f, 40f), "Tablón de misiones · Gremio", title);
+            string head = Quests.Active == QuestId.None
+                ? "Elige una misión. Solo puedes llevar una a la vez."
+                : "Misión en curso: " + Quests.Info(Quests.Active).Title + " (" + Quests.Progress(Quests.Active) + ")";
+            GUI.Label(new Rect(p.x + 24f, p.y + 52f, 860f, 26f), head, small);
+
+            float y = p.y + 90f;
+            for (int i = 0; i < Quests.All.Length; i++)
+            {
+                QuestInfo q = Quests.All[i];
+                Rect card = new Rect(p.x + 24f, y, p.width - 48f, 126f);
+                Fill(card, new Color(0.26f, 0.21f, 0.30f, 1f));
+                GUI.Label(new Rect(card.x + 14f, card.y + 6f, 560f, 28f), q.Title, lbl);
+                GUI.Label(new Rect(card.x + 14f, card.y + 34f, 600f, 64f), q.Text, desc);
+                GUI.Label(new Rect(card.x + 14f, card.y + 98f, 660f, 24f),
+                    "Recompensa: " + q.RewardText + (q.UnlocksCave ? "   ·   Abre la cueva de la montaña" : ""), small);
+
+                Rect b = new Rect(card.xMax - 214f, card.y + 40f, 196f, 46f);
+                if (Quests.IsDone(q.Id)) Btn(b, "Completada", false);
+                else if (Quests.Active == q.Id) Btn(b, Quests.IsReady(q.Id) ? "Lista: habla con la maestra" : "En curso", false);
+                else if (Quests.Active != QuestId.None) Btn(b, "Otra en curso", false);
+                else if (Btn(b, "Aceptar"))
+                {
+                    Quests.Accept(q.Id);
+                    Close();
+                    return;
+                }
+                y += 134f;
+            }
+            if (Btn(new Rect(p.xMax - 190f, p.yMax - 54f, 166f, 40f), "Cerrar")) Close();
         }
 
         // ---------- Mapa grande ----------
@@ -223,7 +269,7 @@ namespace Hearthbound
             float y = map.y + 4f;
             GUI.Label(new Rect(x, y, 280f, 30f), "Leyenda", lbl);
             if (mm != null) mm.DrawLegend(x, y + 36f);
-            y += 36f + 5f * 26f + 10f;
+            y += 36f + 7f * 26f + 10f;
 
             bool island = IslandMap.Active;
             if (mm != null) GUI.Label(new Rect(x, y, 300f, 28f), "Zoom: x" + mm.ZoomFactor.ToString("0.0"), small);
@@ -656,6 +702,9 @@ namespace Hearthbound
                     devMsg = "Entrando a la mazmorra";
                     Close();
                 }
+                if (Village.Exists && GUILayout.Button("Pueblo (gremio)", btn, GUILayout.Height(32f))) Teleport(Village.GuildDoor);
+                if (GUILayout.Button("Misiones: reiniciar", btn, GUILayout.Height(32f))) { Quests.Reset(); devMsg = "Misiones reiniciadas"; }
+                if (GUILayout.Button("Emblema del gremio", btn, GUILayout.Height(32f))) { Quests.GuildSeal = true; devMsg = "Emblema entregado"; }
                 if (GUILayout.Button("Revelar todo el mapa", btn, GUILayout.Height(32f))) { IslandMap.RevealAll(); devMsg = "Mapa revelado"; }
                 if (GUILayout.Button("Olvidar el mapa", btn, GUILayout.Height(32f))) { IslandMap.Forget(); devMsg = "Mapa borrado"; }
             }

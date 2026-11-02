@@ -154,6 +154,8 @@ namespace Hearthbound
                 if (fog && !IslandMap.IsDiscovered(it.transform.position)) continue;
                 Dot(ToMap(it.transform.position, center, w, yw, hf), 7f * k, new Color(1f, 0.85f, 0.25f), w);
             }
+            if (Village.Exists && !Dungeon.Active)
+                Dot(ToMap(Village.Center, center, w, yw, hf), 10f * k, new Color(1f, 0.62f, 0.15f), w);
             if (!Dungeon.Active)
                 for (int i = 0; i < Dungeon.Sites.Count; i++)
                 {
@@ -324,8 +326,9 @@ namespace Hearthbound
         public void DrawLegend(float x, float y)
         {
             EnsureStyles();
-            string[] names = { "Tú", "Pareja", "Enemigo", "Cofre", "Refugio" };
-            Color[] cols = { Color.white, new Color(1f, 0.55f, 0.72f), new Color(0.95f, 0.25f, 0.25f), new Color(1f, 0.85f, 0.25f), new Color(0.45f, 0.95f, 0.65f) };
+            string[] names = { "Tú", "Pareja", "Enemigo", "Cofre", "Refugio", "Pueblo", "Mazmorra" };
+            Color[] cols = { Color.white, new Color(1f, 0.55f, 0.72f), new Color(0.95f, 0.25f, 0.25f), new Color(1f, 0.85f, 0.25f), new Color(0.45f, 0.95f, 0.65f),
+                new Color(1f, 0.62f, 0.15f), new Color(0.80f, 0.55f, 1f) };
             for (int i = 0; i < names.Length; i++)
             {
                 Fill(new Rect(x, y + i * 26f + 5f, 14f, 14f), cols[i]);

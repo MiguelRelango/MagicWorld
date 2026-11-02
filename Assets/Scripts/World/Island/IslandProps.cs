@@ -41,6 +41,7 @@ namespace Hearthbound
                 float z = oz + 2f + (float)rng.NextDouble() * (N - 4f);
                 float h = IslandTerrain.Height(x, z);
                 if (h < minH || h > maxH) continue;
+                if (Village.Blocks(x, z, 3f)) continue;   // el pueblo no tiene árboles ni enemigos encima
                 if (IslandTerrain.Slope(x, z) > maxSlope) continue;
                 if (DistCamp(x, z) < minCamp) continue;
                 p = new Vector3(x, h, z);
@@ -106,6 +107,9 @@ namespace Hearthbound
 
             // Entrada de mazmorra en la montaña (si este chunk tiene una).
             Dungeon.PopulateChunk(chunk, cx, cz);
+
+            // Pueblo con el gremio (si este chunk lo contiene).
+            Village.PopulateChunk(chunk, cx, cz);
         }
 
         // ---------- Piezas ----------
@@ -182,6 +186,7 @@ namespace Hearthbound
                 float z = oz + 10f + (float)rng.NextDouble() * (IslandWorld.ChunkSize - 20f);
                 float h = IslandTerrain.Height(x, z);
                 if (h < 2.5f || h > 11f || IslandTerrain.Slope(x, z) > 0.12f || DistCamp(x, z) < 60f) continue;
+                if (Village.Blocks(x, z, 12f)) continue;
                 bool flat = true;
                 for (int k = 0; k < 8 && flat; k++)
                 {

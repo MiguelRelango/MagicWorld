@@ -45,6 +45,7 @@ namespace Hearthbound
             IslandTerrain.Init(seed);
             Consumed.Clear();
             Dungeon.Init(seed);
+            Village.Init();
 
             GameObject go = new GameObject("IslandWorld");
             Root = go.transform;
@@ -55,6 +56,7 @@ namespace Hearthbound
         public static void Clear()
         {
             Dungeon.Clear();
+            Village.Clear();
             if (Root != null)
             {
                 MeshFilter[] mfs = Root.GetComponentsInChildren<MeshFilter>(true);
@@ -307,7 +309,7 @@ namespace Hearthbound
             ForestLook.GrassPatch(go.transform, IslandTerrain.Seed ^ (ox * 73856093) ^ (oz * 19349663),
                 ox, oz, N, N, 1200, IslandTerrain.Height,
                 (x, z) => IslandTerrain.Height(x, z) > 1.5f && IslandTerrain.Height(x, z) < 10.5f
-                    && IslandTerrain.Slope(x, z) < 0.45f
+                    && IslandTerrain.Slope(x, z) < 0.45f && !Village.Blocks(x, z, 0f)
                     && (new Vector2(x - IslandTerrain.Camp.x, z - IslandTerrain.Camp.z)).sqrMagnitude > 100f);
         }
 

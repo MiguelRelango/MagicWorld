@@ -71,6 +71,7 @@ namespace Hearthbound
             Dead = false;
             gardenSlimes.Clear();
 
+            Quests.Reset();
             Game.HasSword = Game.HasShield = Game.HasBow = Game.HasBombs = true;
             Game.HasWand = true;
             Game.HasAxe = true;
@@ -97,7 +98,7 @@ namespace Hearthbound
 
             Game.State = GameState.Playing;
             Game.Objective = "Explora la isla";
-            Game.Dialog("Pareja", "¡Qué isla tan grande! Rompe las rocas con grietas usando bombas y busca ruinas y cofres. Semilla: " + seed, 8f);
+            Game.Dialog("Pareja", "¡Qué isla tan grande! Hay un pueblo con un gremio (punto naranja en el minimapa): pasa por su tablón de misiones. Semilla: " + seed, 8f);
         }
 
         public void Cleanup()
@@ -432,7 +433,11 @@ namespace Hearthbound
             objTimer -= Time.deltaTime;
             if (objTimer <= 0f)
             {
-                Game.Objective = Dungeon.Active ? Dungeon.ObjectiveText : "Explora la isla · enemigos vencidos: " + Game.Kills;
+                Quests.Tick();
+                if (Dungeon.Active) Game.Objective = Dungeon.ObjectiveText;
+                else if (Quests.Active != QuestId.None) Game.Objective = Quests.ObjectiveText;
+                else if (!Quests.EverAccepted && Village.Exists) Game.Objective = "Visita el gremio del pueblo (punto naranja) y coge una misión";
+                else Game.Objective = "Explora la isla · enemigos vencidos: " + Game.Kills;
                 objTimer = 0.5f;
             }
             HandleInteraction();

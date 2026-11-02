@@ -38,6 +38,7 @@ namespace Hearthbound
 
         static DungeonRunner runner;
         static bool busy;
+        static float sealWarnAt;
         static float cooldownUntil;
 
         // Ambiente guardado al entrar
@@ -182,7 +183,7 @@ namespace Hearthbound
                     crack.transform.localRotation = Quaternion.Euler(0f, 0f, -14f + i * 9f);
                 }
                 Prim.Make(PrimitiveType.Cube, seal.transform, new Vector3(0f, 0.05f, 0.52f), new Vector3(0.012f, 0.9f, 0.06f), new Color(1f, 0.9f, 0.55f), false, "CrackMain", true);
-                Zone.Create(t, s.Pos + s.Fwd * 3.0f, 7.5f, () => OpenSeal(s, seal), true);
+                Zone.Create(t, s.Pos + s.Fwd * 3.0f, 7.5f, () => OpenSeal(s, seal), false);
             }
             else
             {
@@ -196,6 +197,16 @@ namespace Hearthbound
         static void OpenSeal(DungeonSite s, GameObject seal)
         {
             if (s.Opened || seal == null) return;
+            if (!Quests.GuildSeal)
+            {
+                // Sin el emblema del gremio la roca no cede.
+                if (Time.time > sealWarnAt)
+                {
+                    sealWarnAt = Time.time + 8f;
+                    Game.Say("La roca está sellada con un emblema antiguo... quizá en el pueblo sepan algo", 5f);
+                }
+                return;
+            }
             s.Opened = true;
             Transform t = s.Entrance;
             Vector3 at = seal.transform.position + s.Fwd * 0.6f;
@@ -298,6 +309,7 @@ namespace Hearthbound
             if (rescued)
             {
                 s.Rescued = true;
+                Quests.OnVillagerRescued();
                 SpawnVillagerOutside(s);
                 Reward();
             }

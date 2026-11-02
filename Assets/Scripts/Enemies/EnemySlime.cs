@@ -220,6 +220,7 @@ namespace Hearthbound
             if (l != null) l.enabled = false;
             if (Goblin)
             {
+                Quests.OnGoblinKilled();
                 Pickup.Spawn(transform.position + Vector3.up * 0.3f, PickupKind.Gem, 2);
                 if (Random.value < 0.35f) Pickup.Spawn(transform.position + new Vector3(0.5f, 0.3f, 0.2f), Random.value < 0.5f ? PickupKind.Heart : PickupKind.Arrows);
             }
