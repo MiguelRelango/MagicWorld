@@ -100,6 +100,18 @@ con tu pareja y exploras:
 
 Código: `Assets/Scripts/World/Island/` (terreno, chunks y contenido).
 
+## Mazmorras
+
+En la montaña de la isla hay entradas a mazmorras (se ven como un punto morado en el minimapa y el mapa grande, una vez descubiertas).
+
+- **Entrada:** una cueva rocosa sellada con roca agrietada. Al acercarte (~8 m) el sello estalla en un destello de luz y queda una columna de luz con una estela fina que sube al cielo. Entra en la columna para pasar a la mazmorra.
+- **Interior (Cripta de los Goblins):** laberinto de 9x9 celdas generado con la semilla de la isla, con salas abiertas, antorchas en las paredes, goblins (necesitan verte; te siguen un rato si te pierden), cofres en los callejones sin salida (el más lejano guarda el tesoro principal) y gemas/corazones sueltos.
+- **Rescate:** al fondo hay una jaula con un aldeano. Ábrela con E, escóltalo hasta la columna de luz del principio y sal con él: te da una recompensa y se queda junto a la entrada.
+- Dentro no se puede construir ni plantar, y el mapa grande (M) se desactiva (usa el minimapa, que muestra el laberinto desde arriba). Si te desmayas, despiertas en la entrada de la mazmorra.
+- Modo dev (F1, pestaña Viaje): botones para ir a cada entrada y para entrar directamente a la mazmorra 1.
+
+Código en `Assets/Scripts/World/Dungeon/` (`Dungeon.cs` entrada y transiciones, `DungeonMaze.cs` laberinto, `DungeonParts.cs` antorcha, columna de luz y aldeano). El goblin es una variante de `EnemySlime` (`SpawnGoblin`).
+
 ## Estructura
 
 ```

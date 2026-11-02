@@ -104,6 +104,11 @@ namespace Hearthbound
             else if (GameInput.Pressed(Act.Inventory)) want = UiPanel.Inventory;
             else if (Settings.Dev && GameInput.Pressed(Act.Dev)) want = UiPanel.Dev;
             if (want == UiPanel.None) return;
+            if (want == UiPanel.Map && Dungeon.Active && playing)
+            {
+                Game.Say("El mapa de la isla no sirve aquí dentro; usa el minimapa", 3f);
+                return;
+            }
 
             if (open && Game.Panel == want) Close();
             else Open(want);
@@ -448,6 +453,7 @@ namespace Hearthbound
 
         void Teleport(Vector3 pos)
         {
+            if (Dungeon.Active) Dungeon.ForceExit();   // saliste de la mazmorra por la puerta de atrás
             if (director != null && director.IslandMode && IslandWorld.Instance != null) IslandWorld.Instance.EnsureAround(pos, 1);
             Game.Player.Teleport(pos);
             Game.Player.ClearLock();
@@ -639,6 +645,17 @@ namespace Hearthbound
                 if (GUILayout.Button("Campamento", btn, GUILayout.Height(32f))) Teleport(IslandTerrain.Camp + Vector3.up * 0.4f);
                 if (GUILayout.Button("Cima de la montaña", btn, GUILayout.Height(32f))) Teleport(new Vector3(0f, IslandTerrain.Height(0f, 0f) + 0.6f, 0f));
                 if (GUILayout.Button("Costa norte", btn, GUILayout.Height(32f))) { Vector3 q = new Vector3(0f, 0f, 150f); q.y = IslandTerrain.Height(q.x, q.z) + 0.6f; Teleport(q); }
+                for (int di = 0; di < Dungeon.Sites.Count; di++)
+                {
+                    int idx = di;
+                    if (GUILayout.Button("Mazmorra " + (di + 1) + ": entrada", btn, GUILayout.Height(32f))) Teleport(Dungeon.OutsidePoint(idx));
+                }
+                if (Dungeon.Sites.Count > 0 && GUILayout.Button("Entrar a la mazmorra 1", btn, GUILayout.Height(32f)))
+                {
+                    Dungeon.DevEnter(0);
+                    devMsg = "Entrando a la mazmorra";
+                    Close();
+                }
                 if (GUILayout.Button("Revelar todo el mapa", btn, GUILayout.Height(32f))) { IslandMap.RevealAll(); devMsg = "Mapa revelado"; }
                 if (GUILayout.Button("Olvidar el mapa", btn, GUILayout.Height(32f))) { IslandMap.Forget(); devMsg = "Mapa borrado"; }
             }

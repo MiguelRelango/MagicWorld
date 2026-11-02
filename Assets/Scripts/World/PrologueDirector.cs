@@ -432,7 +432,7 @@ namespace Hearthbound
             objTimer -= Time.deltaTime;
             if (objTimer <= 0f)
             {
-                Game.Objective = "Explora la isla · Slimes vencidos: " + Game.Kills;
+                Game.Objective = Dungeon.Active ? Dungeon.ObjectiveText : "Explora la isla · enemigos vencidos: " + Game.Kills;
                 objTimer = 0.5f;
             }
             HandleInteraction();
@@ -484,8 +484,10 @@ namespace Hearthbound
             Dead = true;
             Game.Say("Te desmayaste...", 2.5f);
             yield return new WaitForSeconds(2.2f);
-            if (IslandMode && IslandWorld.Instance != null) IslandWorld.Instance.EnsureAround(checkpoint, 1);
-            player.Teleport(checkpoint);
+            Vector3 respawn = checkpoint;
+            if (IslandMode && Dungeon.Active) respawn = Dungeon.RespawnPoint;   // en la mazmorra despiertas en su entrada
+            else if (IslandMode && IslandWorld.Instance != null) IslandWorld.Instance.EnsureAround(checkpoint, 1);
+            player.Teleport(respawn);
             player.ClearLock();
             hp.Revive(1f);
             Dead = false;

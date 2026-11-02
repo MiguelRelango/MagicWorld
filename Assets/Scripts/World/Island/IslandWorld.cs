@@ -44,6 +44,7 @@ namespace Hearthbound
             Clear();
             IslandTerrain.Init(seed);
             Consumed.Clear();
+            Dungeon.Init(seed);
 
             GameObject go = new GameObject("IslandWorld");
             Root = go.transform;
@@ -53,6 +54,7 @@ namespace Hearthbound
 
         public static void Clear()
         {
+            Dungeon.Clear();
             if (Root != null)
             {
                 MeshFilter[] mfs = Root.GetComponentsInChildren<MeshFilter>(true);
@@ -124,6 +126,7 @@ namespace Hearthbound
         void Update()
         {
             if (Game.State != GameState.Playing || Game.Player == null) return;
+            if (Dungeon.Active) return;   // dentro de la mazmorra la isla queda en pausa (y no hay mar que vigilar)
             Vector3 pos = Game.Player.transform.position;
 
             sea.position = new Vector3(pos.x, -0.35f + Mathf.Sin(Time.time * 0.8f) * 0.05f, pos.z);

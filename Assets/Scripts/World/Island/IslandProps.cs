@@ -103,6 +103,9 @@ namespace Hearthbound
                 if (!Spot(rng, ox, oz, 1.6f, 11f, 0.5f, 55f, out p)) continue;
                 EnemySlime.Spawn(p + Vector3.up * 0.1f, chunk);
             }
+
+            // Entrada de mazmorra en la montaña (si este chunk tiene una).
+            Dungeon.PopulateChunk(chunk, cx, cz);
         }
 
         // ---------- Piezas ----------

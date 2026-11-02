@@ -153,7 +153,9 @@ namespace Hearthbound
 
             if (dirty && Time.unscaledTime >= nextSave) { Save(); nextSave = Time.unscaledTime + 20f; }
 
-            if (GameInput.Pressed(Act.Build) && worldId.Length > 0)
+            if (GameInput.Pressed(Act.Build) && worldId.Length > 0 && Dungeon.Active)
+                Game.Say("No se puede construir dentro de la mazmorra", 2f);
+            else if (GameInput.Pressed(Act.Build) && worldId.Length > 0)
             {
                 Game.Building = !Game.Building;
                 Game.Say(Game.Building ? "Modo construcción" : "Modo construcción desactivado", 1.8f);

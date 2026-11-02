@@ -154,9 +154,17 @@ namespace Hearthbound
                 if (fog && !IslandMap.IsDiscovered(it.transform.position)) continue;
                 Dot(ToMap(it.transform.position, center, w, yw, hf), 7f * k, new Color(1f, 0.85f, 0.25f), w);
             }
+            if (!Dungeon.Active)
+                for (int i = 0; i < Dungeon.Sites.Count; i++)
+                {
+                    DungeonSite ds = Dungeon.Sites[i];
+                    if (fog && !IslandMap.IsDiscovered(ds.Pos)) continue;
+                    Dot(ToMap(ds.Pos, center, w, yw, hf), 9f * k, new Color(0.80f, 0.55f, 1f), w);
+                }
             for (int i = 0; i < Lockable.All.Count; i++)
             {
                 if (!Lockable.All[i].IsEnemy) continue;
+                if (Dungeon.Active && (Lockable.All[i].transform.position - pc).sqrMagnitude > 144f) continue;   // en la mazmorra solo los cercanos
                 if (fog && (Lockable.All[i].transform.position - pc).sqrMagnitude > 3600f) continue;   // solo los que están cerca
                 Dot(ToMap(Lockable.All[i].transform.position, center, w, yw, hf), 6f * k, new Color(0.95f, 0.25f, 0.25f), w);
             }

@@ -324,6 +324,7 @@ namespace Hearthbound
         {
             if (!GameInput.Pressed(Act.Plant) || Time.time < plantReady) return;
             plantReady = Time.time + 0.5f;
+            if (Dungeon.Active) { Game.Say("Aquí dentro no crece nada", 2f); return; }
             if (Game.Seeds <= 0) { Game.Say("No tienes semillas: tala árboles para conseguirlas", 2.5f); return; }
 
             Vector3 p = transform.position + transform.forward * 1.8f;
