@@ -130,7 +130,7 @@ namespace Hearthbound
         /// <summary>Porcentaje aproximado de la isla descubierta (respecto a un disco del radio de la isla).</summary>
         public static float Percent
         {
-            get { return Mathf.Min(100f, SeenCount * Cell * Cell / (Mathf.PI * IslandTerrain.Radius * IslandTerrain.Radius) * 100f); }
+            get { return Mathf.Min(100f, SeenCount * Cell * Cell / IslandTerrain.LandArea * 100f); }
         }
 
         /// <summary>Modo dev: descubre todo el mapa.</summary>
@@ -175,6 +175,23 @@ namespace Hearthbound
                 if (IslandTerrain.Forest(x, z) > 0.45f) c = new Color(0.33f, 0.58f, 0.27f);      // bosque
             }
 
+            // Regiones del plano de la isla.
+            if (h >= 1.1f && h <= 21f)
+            {
+                IslandRegion rg = IslandLayout.RegionAt(x, z);
+                if (rg == IslandRegion.Desert) c = new Color(0.90f, 0.78f, 0.52f);
+                else if (rg == IslandRegion.City) c = new Color(0.64f, 0.64f, 0.68f);
+                else if (rg == IslandRegion.Harbor) c = new Color(0.72f, 0.64f, 0.50f);
+                else if (rg == IslandRegion.Swamp) c = new Color(0.28f, 0.44f, 0.38f);
+                else if (rg == IslandRegion.Lava && h > 6f) c = new Color(0.40f, 0.33f, 0.32f);
+            }
+            for (int i = 0; i < IslandLayout.Lava.Length; i++)
+            {
+                float dx = x - IslandLayout.Lava[i].x, dz = z - IslandLayout.Lava[i].z;
+                float r = IslandLayout.Lava[i].y;
+                if (dx * dx + dz * dz < r * r) c = new Color(1f, 0.48f, 0.12f);
+            }
+
             // Relieve: luz desde el noroeste.
             if (h >= 0f)
             {
@@ -190,7 +207,7 @@ namespace Hearthbound
 
         static string PathFor()
         {
-            return Path.Combine(Application.persistentDataPath, "hearthbound_map_" + seed + ".bin");
+            return Path.Combine(Application.persistentDataPath, "hearthbound_map_v2_" + seed + ".bin");
         }
 
         public static void Save()

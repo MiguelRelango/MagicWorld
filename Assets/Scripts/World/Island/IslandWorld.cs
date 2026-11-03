@@ -19,6 +19,8 @@ namespace Hearthbound
 
         static Material[] mats;
         static readonly Color SkyColor = new Color(0.74f, 0.87f, 0.96f);
+        static readonly Color SwampFog = new Color(0.62f, 0.70f, 0.68f);
+        float swampBlend;
 
         class Chunk
         {
@@ -44,6 +46,7 @@ namespace Hearthbound
             Clear();
             IslandTerrain.Init(seed);
             Consumed.Clear();
+            IslandLayout.Init(seed);
             Dungeon.Init(seed);
             Village.Init();
 
@@ -132,6 +135,14 @@ namespace Hearthbound
             Vector3 pos = Game.Player.transform.position;
 
             sea.position = new Vector3(pos.x, -0.35f + Mathf.Sin(Time.time * 0.8f) * 0.05f, pos.z);
+
+            // Niebla espesa dentro del bosque del pantano.
+            swampBlend = Mathf.MoveTowards(swampBlend, IslandLayout.SwampWeight(pos.x, pos.z), Time.deltaTime * 0.5f);
+            RenderSettings.fogStartDistance = Mathf.Lerp(40f, 4f, swampBlend);
+            RenderSettings.fogEndDistance = Mathf.Lerp(100f, 44f, swampBlend);
+            Color sky = Color.Lerp(SkyColor, SwampFog, swampBlend);
+            RenderSettings.fogColor = sky;
+            if (Camera.main != null) Camera.main.backgroundColor = sky;
 
             Vector2Int center = ChunkOf(pos);
             if (center != lastCenter)
@@ -263,6 +274,7 @@ namespace Hearthbound
             Vector3[] verts = new Vector3[V * V];
             Vector3[] norms = new Vector3[V * V];
             Vector2[] uv = new Vector2[V * V];
+            Color32[] cols = new Color32[V * V];
             for (int i = 0; i < V; i++)
             {
                 for (int j = 0; j < V; j++)
@@ -272,6 +284,7 @@ namespace Hearthbound
                     Vector3 n = new Vector3(hg[i, j + 1] - hg[i + 2, j + 1], 2f, hg[i + 1, j] - hg[i + 1, j + 2]);
                     norms[k] = n.normalized;
                     uv[k] = new Vector2((ox + i) / 8f, (oz + j) / 8f);
+                    cols[k] = IslandLayout.Tint(ox + i, oz + j);
                 }
             }
 
@@ -293,6 +306,7 @@ namespace Hearthbound
             mesh.vertices = verts;
             mesh.normals = norms;
             mesh.uv = uv;
+            mesh.colors32 = cols;
             mesh.SetTriangles(tris, 0);
             mesh.RecalculateBounds();
 
@@ -309,7 +323,8 @@ namespace Hearthbound
             ForestLook.GrassPatch(go.transform, IslandTerrain.Seed ^ (ox * 73856093) ^ (oz * 19349663),
                 ox, oz, N, N, 1200, IslandTerrain.Height,
                 (x, z) => IslandTerrain.Height(x, z) > 1.5f && IslandTerrain.Height(x, z) < 10.5f
-                    && IslandTerrain.Slope(x, z) < 0.45f && !Village.Blocks(x, z, 0f)
+                    && IslandTerrain.Slope(x, z) < 0.45f && !Village.Blocks(x, z, 0f) && !IslandLayout.Blocks(x, z, 0f)
+                    && IslandLayout.RegionAt(x, z) != IslandRegion.Desert
                     && (new Vector2(x - IslandTerrain.Camp.x, z - IslandTerrain.Camp.z)).sqrMagnitude > 100f);
         }
 

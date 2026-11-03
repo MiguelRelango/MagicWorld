@@ -51,47 +51,26 @@ namespace Hearthbound
         public static void Init(int seed)
         {
             Clear();
-            System.Random rng = new System.Random(seed ^ 0x5eed1);
-            float a0 = (float)rng.NextDouble() * Mathf.PI * 2f;
-            // Tres pasadas cada vez menos exigentes, para garantizar al menos una entrada.
-            float[] minH = { 12.5f, 11f, 9f };
-            float[] minSlope = { 0.20f, 0.10f, 0.02f };
-            for (int pass = 0; pass < 3 && Sites.Count < 3; pass++)
+            // Las bocas de las cuevas están en las montañas de lava del mapa (IslandLayout.DungeonSpots).
+            for (int k = 0; k < IslandLayout.DungeonSpots.Length; k++)
             {
-                for (int k = 0; k < 24 && Sites.Count < 3; k++)
-                {
-                    float ang = a0 + k * (Mathf.PI * 2f / 24f);
-                    float cx = Mathf.Cos(ang), cz = Mathf.Sin(ang);
-                    for (float r = 72f; r >= 20f; r -= 3f)
-                    {
-                        float x = cx * r, z = cz * r;
-                        float h = IslandTerrain.Height(x, z);
-                        if (h < minH[pass]) continue;
-                        float sl = IslandTerrain.Slope(x, z);
-                        if (sl < minSlope[pass] || sl > 0.55f) continue;
-                        Vector3 p = new Vector3(x, h, z);
-                        bool near = false;
-                        for (int i = 0; i < Sites.Count; i++)
-                            if ((Sites[i].Pos - p).sqrMagnitude < 60f * 60f) near = true;
-                        if (near) break;
-                        if (Vector3.Distance(new Vector3(IslandTerrain.Camp.x, 0f, IslandTerrain.Camp.z), new Vector3(x, 0f, z)) < 50f) break;
+                float x = IslandLayout.DungeonSpots[k].x, z = IslandLayout.DungeonSpots[k].y;
+                float h = IslandTerrain.Height(x, z);
+                Vector3 p = new Vector3(x, h, z);
 
-                        // Orientación cuesta abajo (hacia fuera de la montaña).
-                        float gx = IslandTerrain.Height(x + 1.5f, z) - IslandTerrain.Height(x - 1.5f, z);
-                        float gz = IslandTerrain.Height(x, z + 1.5f) - IslandTerrain.Height(x, z - 1.5f);
-                        Vector3 fwd = new Vector3(-gx, 0f, -gz);
-                        if (fwd.sqrMagnitude < 0.0001f) fwd = new Vector3(x, 0f, z);
-                        fwd.Normalize();
+                // Orientación cuesta abajo (hacia fuera de la montaña).
+                float gx = IslandTerrain.Height(x + 1.5f, z) - IslandTerrain.Height(x - 1.5f, z);
+                float gz = IslandTerrain.Height(x, z + 1.5f) - IslandTerrain.Height(x, z - 1.5f);
+                Vector3 fwd = new Vector3(-gx, 0f, -gz);
+                if (fwd.sqrMagnitude < 0.0001f) fwd = new Vector3(0f, 0f, -1f);
+                fwd.Normalize();
 
-                        DungeonSite s = new DungeonSite();
-                        s.Id = Sites.Count;
-                        s.Pos = p;
-                        s.Fwd = fwd;
-                        s.Chunk = new Vector2Int(Mathf.FloorToInt(x / IslandWorld.ChunkSize), Mathf.FloorToInt(z / IslandWorld.ChunkSize));
-                        Sites.Add(s);
-                        break;
-                    }
-                }
+                DungeonSite s = new DungeonSite();
+                s.Id = Sites.Count;
+                s.Pos = p;
+                s.Fwd = fwd;
+                s.Chunk = new Vector2Int(Mathf.FloorToInt(x / IslandWorld.ChunkSize), Mathf.FloorToInt(z / IslandWorld.ChunkSize));
+                Sites.Add(s);
             }
 
             GameObject go = new GameObject("DungeonRunner");

@@ -40,61 +40,12 @@ namespace Hearthbound
         public static void Init()
         {
             Clear();
-            Vector3 camp = IslandTerrain.Camp;
-            bool found = false;
-            float bestScore = float.MaxValue;
-            Vector3 best = Vector3.zero;
-
-            for (int pass = 0; pass < 2 && !found; pass++)
-            {
-                float hMin = pass == 0 ? 2.8f : 2.0f, hMax = pass == 0 ? 8.5f : 11f;
-                float slopeMax = pass == 0 ? 0.15f : 0.30f;
-                for (int src = 0; src < 2; src++)
-                {
-                    float ox = src == 0 ? camp.x : 0f, oz = src == 0 ? camp.z : 0f;
-                    float rMin = src == 0 ? 45f : 40f, rMax = src == 0 ? 110f : 150f;
-                    for (float r = rMin; r <= rMax; r += 7f)
-                    {
-                        for (int k = 0; k < 24; k++)
-                        {
-                            float a = k * Mathf.PI * 2f / 24f + r * 0.13f;
-                            float x = ox + Mathf.Cos(a) * r, z = oz + Mathf.Sin(a) * r;
-                            float h = IslandTerrain.Height(x, z);
-                            if (h < hMin || h > hMax) continue;
-                            if (IslandTerrain.Slope(x, z) > slopeMax) continue;
-                            float dc = Mathf.Sqrt((x - camp.x) * (x - camp.x) + (z - camp.z) * (z - camp.z));
-                            if (dc < 35f) continue;
-
-                            bool nearDungeon = false;
-                            for (int i = 0; i < Dungeon.Sites.Count; i++)
-                            {
-                                Vector3 sp = Dungeon.Sites[i].Pos;
-                                if ((sp.x - x) * (sp.x - x) + (sp.z - z) * (sp.z - z) < 50f * 50f) nearDungeon = true;
-                            }
-                            if (nearDungeon) continue;
-
-                            float worst = 0f;
-                            for (int ring = 1; ring <= 3; ring++)
-                            {
-                                for (int d = 0; d < 8; d++)
-                                {
-                                    float aa = d * Mathf.PI * 0.25f;
-                                    float hh = IslandTerrain.Height(x + Mathf.Cos(aa) * ring * 8f, z + Mathf.Sin(aa) * ring * 8f);
-                                    worst = Mathf.Max(worst, Mathf.Abs(hh - h));
-                                    if (hh < 1.2f) worst += 4f;   // no pegado al mar
-                                }
-                            }
-                            float score = worst + dc * 0.004f;
-                            if (score < bestScore) { bestScore = score; best = new Vector3(x, h, z); found = true; }
-                        }
-                    }
-                }
-            }
-
-            if (!found) return;
+            // El pueblo del centro de la isla (IslandLayout.Town): el terreno ya está aplanado ahí.
+            Site t = IslandLayout.Town;
+            float h = IslandTerrain.Height(t.C.x, t.C.y);
             Exists = true;
-            Center = best;
-            Chunk = new Vector2Int(Mathf.FloorToInt(best.x / IslandWorld.ChunkSize), Mathf.FloorToInt(best.z / IslandWorld.ChunkSize));
+            Center = new Vector3(t.C.x, h, t.C.y);
+            Chunk = new Vector2Int(Mathf.FloorToInt(Center.x / IslandWorld.ChunkSize), Mathf.FloorToInt(Center.z / IslandWorld.ChunkSize));
         }
 
         public static void Clear()

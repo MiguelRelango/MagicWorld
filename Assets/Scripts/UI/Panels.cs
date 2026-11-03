@@ -269,7 +269,7 @@ namespace Hearthbound
             float y = map.y + 4f;
             GUI.Label(new Rect(x, y, 280f, 30f), "Leyenda", lbl);
             if (mm != null) mm.DrawLegend(x, y + 36f);
-            y += 36f + 7f * 26f + 10f;
+            y += 36f + 8f * 26f + 10f;
 
             bool island = IslandMap.Active;
             if (mm != null) GUI.Label(new Rect(x, y, 300f, 28f), "Zoom: x" + mm.ZoomFactor.ToString("0.0"), small);
@@ -497,6 +497,21 @@ namespace Hearthbound
             return spawnRoot;
         }
 
+        Vector2 travelScroll;
+
+        /// <summary>Un punto seguro, fuera de los edificios macizos, para viajar a un lugar del mapa.</summary>
+        static Vector3 PlacePoint(Site st)
+        {
+            Vector2 o = Vector2.zero;
+            if (st == IslandLayout.GiantTree) o = new Vector2(0f, -20f);
+            else if (st == IslandLayout.City) o = new Vector2(0f, -8f);
+            else if (st == IslandLayout.Keep) o = new Vector2(0f, -10f);
+            else if (st == IslandLayout.Tower) o = new Vector2(0f, -9f);
+            Vector3 q = new Vector3(st.C.x + o.x, 0f, st.C.y + o.y);
+            q.y = IslandTerrain.Height(q.x, q.z) + 0.6f;
+            return q;
+        }
+
         void Teleport(Vector3 pos)
         {
             if (Dungeon.Active) Dungeon.ForceExit();   // saliste de la mazmorra por la puerta de atrás
@@ -676,6 +691,7 @@ namespace Hearthbound
             // Columna 3: viaje
             GUILayout.BeginArea(new Rect(p.x + 20f + (colW + 20f) * 2f + 40f, top, colW - 60f, h));
             GUILayout.Label("VIAJE", lbl);
+            travelScroll = GUILayout.BeginScrollView(travelScroll);
             if (!island)
             {
                 if (GUILayout.Button("Casa", btn, GUILayout.Height(32f))) Teleport(PrologueWorld.PlayerStart);
@@ -689,8 +705,25 @@ namespace Hearthbound
             else
             {
                 if (GUILayout.Button("Campamento", btn, GUILayout.Height(32f))) Teleport(IslandTerrain.Camp + Vector3.up * 0.4f);
-                if (GUILayout.Button("Cima de la montaña", btn, GUILayout.Height(32f))) Teleport(new Vector3(0f, IslandTerrain.Height(0f, 0f) + 0.6f, 0f));
-                if (GUILayout.Button("Costa norte", btn, GUILayout.Height(32f))) { Vector3 q = new Vector3(0f, 0f, 150f); q.y = IslandTerrain.Height(q.x, q.z) + 0.6f; Teleport(q); }
+                GUILayout.Label("Lugares de la isla", small);
+                int col = 0;
+                for (int si = 0; si < IslandLayout.Sites.Count; si++)
+                {
+                    Site st = IslandLayout.Sites[si];
+                    if (st == IslandLayout.Volcano) continue;
+                    if (col == 0) GUILayout.BeginHorizontal();
+                    if (GUILayout.Button(st.Name, btn, GUILayout.Height(30f))) Teleport(PlacePoint(st));
+                    col++;
+                    if (col == 2) { GUILayout.EndHorizontal(); col = 0; }
+                }
+                if (col == 1) GUILayout.EndHorizontal();
+                if (GUILayout.Button("Lava: charco grande", btn, GUILayout.Height(30f)))
+                {
+                    Vector3 lp = IslandLayout.Lava[0];
+                    Vector3 q = new Vector3(lp.x, 0f, lp.z - lp.y - 5f);
+                    q.y = IslandTerrain.Height(q.x, q.z) + 0.6f;
+                    Teleport(q);
+                }
                 for (int di = 0; di < Dungeon.Sites.Count; di++)
                 {
                     int idx = di;
@@ -714,6 +747,7 @@ namespace Hearthbound
                 Game.Partner.Teleport(Game.Player.transform.position + Game.Player.transform.right * 1.5f);
                 devMsg = "Pareja a tu lado";
             }
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
 
             if (Btn(new Rect(p.xMax - 190f, p.yMax - 54f, 166f, 40f), "Cerrar")) Close();

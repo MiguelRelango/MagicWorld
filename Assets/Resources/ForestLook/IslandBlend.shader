@@ -32,13 +32,13 @@ Shader "Hearthbound/Island Blend"
    TEXTURE2D(_Grass); SAMPLER(sampler_Grass);
    TEXTURE2D(_Rock); SAMPLER(sampler_Rock);
    TEXTURE2D(_Snow); SAMPLER(sampler_Snow);
-   struct A { float4 positionOS:POSITION; float3 normalOS:NORMAL; };
-   struct V { float4 positionCS:SV_POSITION; float3 world:TEXCOORD0; half3 normal:TEXCOORD1; half fog:TEXCOORD2; };
+   struct A { float4 positionOS:POSITION; float3 normalOS:NORMAL; half4 color:COLOR; };
+   struct V { float4 positionCS:SV_POSITION; float3 world:TEXCOORD0; half3 normal:TEXCOORD1; half fog:TEXCOORD2; half4 tint:TEXCOORD3; };
    V Vert(A v)
    {
     V o; VertexPositionInputs p=GetVertexPositionInputs(v.positionOS.xyz);
     o.positionCS=p.positionCS; o.world=p.positionWS;
-    o.normal=TransformObjectToWorldNormal(v.normalOS);o.fog=ComputeFogFactor(p.positionCS.z);return o;
+    o.normal=TransformObjectToWorldNormal(v.normalOS);o.fog=ComputeFogFactor(p.positionCS.z);o.tint=1-v.color;return o;
    }
    float Hash(float2 p) { return frac(sin(dot(p,float2(127.1,311.7)))*43758.5453); }
    float Noise(float2 p)
@@ -63,7 +63,14 @@ Shader "Hearthbound/Island Blend"
      +SAMPLE_TEXTURE2D(_Rock,sampler_Rock,i.world.xz/6).rgb*weights.y
      +SAMPLE_TEXTURE2D(_Rock,sampler_Rock,i.world.xy/6).rgb*weights.z;
     half3 s=SAMPLE_TEXTURE2D(_Snow,sampler_Snow,i.world.xz/7).rgb;
+    // Regiones (colores de vértice): x arena, y ceniza volcánica, z adoquín, w pantano.
+    grass*=1-i.tint.x;
+    half3 rockFlat=SAMPLE_TEXTURE2D(_Rock,sampler_Rock,i.world.xz/6).rgb;
     half3 base=lerp(lerp(lerp(sand,g,grass),r,rock),s,snow);
+    base=lerp(base,sand*1.08,i.tint.x*(1-rock*0.6));
+    base=lerp(base,rockFlat*half3(0.34,0.28,0.27),i.tint.y);
+    base=lerp(base,rockFlat*half3(0.95,0.93,0.88),i.tint.z*(1-rock*0.5));
+    base*=lerp(half3(1,1,1),half3(0.52,0.66,0.55),i.tint.w);
     #if defined(_MAIN_LIGHT_SHADOWS_SCREEN)
     float4 shadowCoord=ComputeScreenPos(TransformWorldToHClip(i.world));
     #else

@@ -98,7 +98,26 @@ con tu pareja y exploras:
 - El mar profundo no se cruza a pie: si te metes demasiado, vuelves a tierra.
 - Lo ya abierto o roto no reaparece en esa partida; los slimes sí se regeneran al recargar la zona.
 
-Código: `Assets/Scripts/World/Island/` (terreno, chunks y contenido).
+### Plano de la isla
+
+La forma de la isla y la posición de cada lugar salen de un mapa de referencia (0,5 m por píxel,
+unos 615 x 400 m). La semilla solo cambia el detalle del terreno y el contenido suelto. Empiezas en la
+playa del sur, junto a la torre. Lugares (también aparecen con nombre en el mapa grande al descubrirlos):
+
+- **Pueblo del centro** con plaza, gremio y tablón de misiones, rodeado de cabañas sueltas.
+- **Ciudad amurallada** (noreste): muralla octogonal con torres y dos puertas, calles, plaza con fuente, puestos y palacio.
+- **Puerto del desierto** (este): recinto amurallado de arena con casas de tejado naranja, mercado, palmeras, muelles y barcos.
+- **Puerto pesquero** (sur): muelles de madera hacia el mar, barcos, casas de pescadores y secaderos.
+- **Árbol gigante** (noroeste): tronco enorme, copa a 40-60 m y una escalera de caracol hasta un mirador con cofre.
+- **Fortaleza y muralla norte**, **torre del sur**, **ríos y estanque** que se vadean con el agua a media pierna.
+- **Bosque con niebla** (suroeste): árboles retorcidos y oscuros, neblina baja y la niebla de pantalla se espesa al entrar.
+- **Montañas de lava** (norte): cumbres, charcos de lava que queman y las entradas de las mazmorras.
+- Los bosques densos del mapa tienen muchos más árboles.
+
+Modo dev (F1, pestaña Viaje): botones para viajar a cada lugar.
+
+Código: `Assets/Scripts/World/Island/` (`IslandShape` y `IslandShapeData` = costa y ríos sacados del mapa,
+`IslandLayout` = plano de lugares, `IslandTerrain` = altura, `Landmarks` = edificios, `IslandProps` = contenido suelto).
 
 ## Pueblo, gremio y misiones
 

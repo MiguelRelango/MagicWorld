@@ -42,6 +42,7 @@ namespace Hearthbound
                 float h = IslandTerrain.Height(x, z);
                 if (h < minH || h > maxH) continue;
                 if (Village.Blocks(x, z, 3f)) continue;   // el pueblo no tiene árboles ni enemigos encima
+                if (IslandLayout.Blocks(x, z, 3f)) continue;   // ni las ciudades, puertos, cabañas o lava
                 if (IslandTerrain.Slope(x, z) > maxSlope) continue;
                 if (DistCamp(x, z) < minCamp) continue;
                 p = new Vector3(x, h, z);
@@ -60,13 +61,26 @@ namespace Hearthbound
             System.Random rng = new System.Random(Hash(cx, cz, 1));
             Vector3 p;
 
-            // Árboles: más densos en manchas de bosque.
-            float forest = IslandTerrain.Forest(ox + N * 0.5f, oz + N * 0.5f);
-            int trees = Mathf.Clamp(Mathf.RoundToInt((forest - 0.38f) * 60f), 0, 16);
+            // Árboles: más densos en manchas de bosque (el mapa marca los bosques densos).
+            float cxm = ox + N * 0.5f, czm = oz + N * 0.5f;
+            float forest = IslandTerrain.Forest(cxm, czm);
+            float swamp = IslandLayout.SwampWeight(cxm, czm);
+            int trees = Mathf.Clamp(Mathf.RoundToInt((forest - 0.30f) * 70f), 0, 22);
             for (int i = 0; i < trees; i++)
             {
                 if (!Spot(rng, ox, oz, 1.6f, 12f, 0.55f, 14f, out p)) continue;
+                if (IslandLayout.SwampWeight(p.x, p.z) > 0.35f) continue;   // en el pantano crecen árboles retorcidos
                 PrologueWorld.Tree(chunk, p, 0.8f + (float)rng.NextDouble() * 0.8f);
+            }
+            if (swamp > 0.2f)
+            {
+                int twisted = Mathf.RoundToInt(14f * swamp);
+                for (int i = 0; i < twisted; i++)
+                {
+                    if (!Spot(rng, ox, oz, 1.2f, 6f, 0.5f, 14f, out p)) continue;
+                    if (IslandLayout.SwampWeight(p.x, p.z) < 0.3f) continue;
+                    SwampTree(chunk, p, 0.9f + (float)rng.NextDouble() * 0.9f, i + cx * 31 + cz * 17);
+                }
             }
 
             // Flores y piedras pequeñas (sin colisión).
@@ -110,9 +124,33 @@ namespace Hearthbound
 
             // Pueblo con el gremio (si este chunk lo contiene).
             Village.PopulateChunk(chunk, cx, cz);
+
+            // Ciudades, puertos, árbol gigante, fortaleza, cabañas, lava y niebla (plano de la isla).
+            IslandLayout.PopulateChunk(chunk, cx, cz);
         }
 
         // ---------- Piezas ----------
+
+        /// <summary>Árbol retorcido y oscuro del bosque con niebla: tronco torcido, raíces y copa de musgo.</summary>
+        static void SwampTree(Transform chunk, Vector3 p, float s, int variant)
+        {
+            Color bark = new Color(0.26f, 0.22f, 0.20f);
+            Color moss = Color.Lerp(new Color(0.16f, 0.30f, 0.24f), new Color(0.22f, 0.36f, 0.22f), (variant & 3) / 3f);
+            GameObject g = new GameObject("SwampTree");
+            g.transform.SetParent(chunk, false);
+            g.transform.position = p;
+            g.transform.rotation = Quaternion.Euler(0f, variant * 67f, 0f);
+            Transform t = g.transform;
+            GameObject trunk = Prim.Cyl(t, new Vector3(0f, 2.6f * s, 0f), new Vector3(0.9f * s, 2.8f * s, 0.9f * s), bark, true, "Trunk");
+            trunk.transform.localRotation = Quaternion.Euler(8f, 0f, ((variant % 3) - 1) * 9f);
+            for (int i = 0; i < 4; i++)
+            {
+                GameObject root = Prim.Box(t, new Vector3(Mathf.Cos(i * 1.57f) * 0.9f * s, 0.25f, Mathf.Sin(i * 1.57f) * 0.9f * s), new Vector3(0.35f * s, 0.35f * s, 1.8f * s), bark, false, "Root");
+                root.transform.localRotation = Quaternion.Euler(0f, -i * 90f + 90f, 0f) * Quaternion.Euler(-8f, 0f, 0f);
+            }
+            Prim.Ball(t, new Vector3(0.4f * s, 5.6f * s, 0f), new Vector3(3.4f * s, 1.9f * s, 3.2f * s), moss, false, "Moss");
+            Prim.Ball(t, new Vector3(-0.9f * s, 4.6f * s, 0.6f * s), new Vector3(2.2f * s, 1.3f * s, 2.2f * s), new Color(moss.r * 0.85f, moss.g * 0.85f, moss.b * 0.85f), false, "MossB");
+        }
 
         static void MakeBoulder(Transform chunk, Vector3 p, string key, float yaw)
         {
@@ -186,7 +224,7 @@ namespace Hearthbound
                 float z = oz + 10f + (float)rng.NextDouble() * (IslandWorld.ChunkSize - 20f);
                 float h = IslandTerrain.Height(x, z);
                 if (h < 2.5f || h > 11f || IslandTerrain.Slope(x, z) > 0.12f || DistCamp(x, z) < 60f) continue;
-                if (Village.Blocks(x, z, 12f)) continue;
+                if (Village.Blocks(x, z, 12f) || IslandLayout.Blocks(x, z, 12f)) continue;
                 bool flat = true;
                 for (int k = 0; k < 8 && flat; k++)
                 {

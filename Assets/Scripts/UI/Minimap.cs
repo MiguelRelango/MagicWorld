@@ -121,7 +121,7 @@ namespace Hearthbound
             Fill(new Rect(p.x - size * 0.5f, p.y - size * 0.5f, size, size), c);
         }
 
-        GUIStyle northStyle, smallStyle;
+        GUIStyle northStyle, smallStyle, placeStyle;
 
         void EnsureStyles()
         {
@@ -130,6 +130,8 @@ namespace Hearthbound
             northStyle.normal.textColor = Color.white;
             smallStyle = new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
             smallStyle.normal.textColor = Color.white;
+            placeStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, fontStyle = FontStyle.Bold, alignment = TextAnchor.UpperCenter };
+            placeStyle.normal.textColor = new Color(0.85f, 0.95f, 1f);
         }
 
         static bool IsChest(Interactable it)
@@ -156,6 +158,28 @@ namespace Hearthbound
             }
             if (Village.Exists && !Dungeon.Active)
                 Dot(ToMap(Village.Center, center, w, yw, hf), 10f * k, new Color(1f, 0.62f, 0.15f), w);
+            if (!Dungeon.Active && IslandMap.Active)
+            {
+                // Lugares importantes del mapa (solo los ya descubiertos); con el mapa grande llevan nombre.
+                for (int i = 0; i < IslandLayout.Sites.Count; i++)
+                {
+                    Site st = IslandLayout.Sites[i];
+                    if (st == IslandLayout.Town || st == IslandLayout.Volcano) continue;
+                    Vector3 sp = new Vector3(st.C.x, 0f, st.C.y);
+                    if (fog && !IslandMap.IsDiscovered(sp)) continue;
+                    Vector2 mp = ToMap(sp, center, w, yw, hf);
+                    Dot(mp, 9f * k, new Color(0.45f, 0.75f, 1f), w);
+                    if (k > 1.2f && mp.x > 40f && mp.y > 16f && mp.x < w - 40f && mp.y < w - 8f)
+                    {
+                        EnsureStyles();
+                        Rect lr = new Rect(mp.x - 90f, mp.y + 6f, 180f, 20f);
+                        GUI.color = new Color(0f, 0f, 0f, 0.8f);
+                        GUI.Label(new Rect(lr.x + 1f, lr.y + 1f, lr.width, lr.height), st.Name, placeStyle);
+                        GUI.color = Color.white;
+                        GUI.Label(lr, st.Name, placeStyle);
+                    }
+                }
+            }
             if (!Dungeon.Active)
                 for (int i = 0; i < Dungeon.Sites.Count; i++)
                 {
@@ -326,9 +350,9 @@ namespace Hearthbound
         public void DrawLegend(float x, float y)
         {
             EnsureStyles();
-            string[] names = { "Tú", "Pareja", "Enemigo", "Cofre", "Refugio", "Pueblo", "Mazmorra" };
+            string[] names = { "Tú", "Pareja", "Enemigo", "Cofre", "Refugio", "Pueblo", "Mazmorra", "Lugar" };
             Color[] cols = { Color.white, new Color(1f, 0.55f, 0.72f), new Color(0.95f, 0.25f, 0.25f), new Color(1f, 0.85f, 0.25f), new Color(0.45f, 0.95f, 0.65f),
-                new Color(1f, 0.62f, 0.15f), new Color(0.80f, 0.55f, 1f) };
+                new Color(1f, 0.62f, 0.15f), new Color(0.80f, 0.55f, 1f), new Color(0.45f, 0.75f, 1f) };
             for (int i = 0; i < names.Length; i++)
             {
                 Fill(new Rect(x, y + i * 26f + 5f, 14f, 14f), cols[i]);
